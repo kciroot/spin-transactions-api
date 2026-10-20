@@ -9,6 +9,20 @@ resultado y expone consultas con filtros y paginación. Reto técnico de backend
 
 ---
 
+## Núcleo vs. opcional (leer primero)
+
+Para evaluar el reto **no hace falta Kubernetes, nube ni gastar nada**. El núcleo cumple el enunciado completo:
+
+```bash
+make run        # API local (H2 + proveedor mock embebido)   |   make up   # con PostgreSQL real (Docker)
+make demo       # recorrido guiado de 8 escenarios            |   make test # tests
+```
+Todo lo demás (backups, Kubernetes local con autoescalado, NetworkPolicy, CI) **existe pero solo corre si se pide**:
+`make help` lista cada comando y [`docs/OPCIONALES.md`](docs/OPCIONALES.md) explica costo, requisitos y cómo
+activarlo o apagarlo. Material para la presentación: [`presentacion/`](presentacion/).
+
+---
+
 ## Cómo ejecutarlo
 
 Requisitos: JDK 17+ y Maven 3.9+ (o Docker).
@@ -175,6 +189,10 @@ cientos de millones de filas se migraría a paginación por cursor (keyset sobre
 - Autenticación fuerte (OAuth2/mTLS) y rate limiting por cliente en el API gateway; columna `client_id` para auditoría.
 
 ## Uso de IA
-Usé Claude como asistente de ingeniería: para discutir el diseño (flujo `PENDING`, idempotencia, política de
-resiliencia), generar el boilerplate inicial (estructura del proyecto, DTOs, configuración, README) y proponer
-casos de prueba. Revisé el código y las decisiones; puedo explicar y defender cada parte del diseño y del código.
+Usé Claude como asistente de ingeniería para discutir el diseño, generar código inicial, pruebas, manifiestos de
+despliegue y documentación, y contrasté su propuesta con un plan alternativo de otra IA, adoptando y descartando partes
+con criterio propio (p. ej. separar *rechazo* de *caída* del proveedor, y guardar `PENDING` antes de ejecutar).
+Compilé y probé el código, ejecuté la suite y la demo, y puedo explicar cada decisión.
+
+- Tiempo real invertido: TODO-RICK horas (detalle por fase en [`docs/USO-DE-IA.md`](docs/USO-DE-IA.md)).
+- Lo que verifiqué yo personalmente: TODO-RICK (resumen de una línea).

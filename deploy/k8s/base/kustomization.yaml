@@ -1,3 +1,4 @@
+# CORE: the minimum to run the service in Kubernetes. Everything else is an opt-in component.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: transactions
@@ -6,8 +7,3 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
-  - hpa.yaml
-  - pdb.yaml
-  - networkpolicy.yaml
-  - backup-cronjob.yaml
-# secret.example.yaml is intentionally NOT listed: create the real Secret out of band.

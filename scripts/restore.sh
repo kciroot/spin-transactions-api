@@ -13,6 +13,8 @@ PGPORT="${PGPORT:-5432}"
 : "${PGDATABASE:?PGDATABASE is required}"
 
 echo "[restore] ${file} -> ${PGDATABASE}@${PGHOST}:${PGPORT}"
+psql --no-psqlrc -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${PGDATABASE}'" | grep -q 1 \
+  || createdb "$PGDATABASE"
 pg_restore --clean --if-exists --no-owner --no-privileges --dbname="$PGDATABASE" "$file"
 
 echo "[restore] sanity check:"

@@ -43,8 +43,10 @@ spec:
                   mv "$f.partial" "$f"
                   find /backups -name 'transactions_*.dump' -mtime +7 -delete
               env:
-                - { name: PGHOST, value: postgres.example.internal }
-                - { name: PGDATABASE, value: transactions }
+                - name: PGHOST
+                  valueFrom: { configMapKeyRef: { name: transactions-api, key: PGHOST } }
+                - name: PGDATABASE
+                  valueFrom: { configMapKeyRef: { name: transactions-api, key: PGDATABASE } }
                 - name: PGUSER
                   valueFrom: { secretKeyRef: { name: transactions-api, key: DB_USER } }
                 - name: PGPASSWORD

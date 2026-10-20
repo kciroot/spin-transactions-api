@@ -33,16 +33,16 @@ springdoc:
 
 provider:
   base-url: ${PROVIDER_BASE_URL:http://localhost:8080}
-  connect-timeout: 1s
-  read-timeout: 2s
+  connect-timeout: ${PROVIDER_CONNECT_TIMEOUT:1s}
+  read-timeout: ${PROVIDER_READ_TIMEOUT:2s}
   retry:
-    max-attempts: 3
-    initial-backoff: 200ms
+    max-attempts: ${PROVIDER_RETRY_MAX_ATTEMPTS:3}        # 1 = retries off
+    initial-backoff: ${PROVIDER_RETRY_BACKOFF:200ms}
   circuit-breaker:
-    failure-rate-threshold: 50
-    sliding-window-size: 20
-    minimum-number-of-calls: 10
-    open-state-duration: 10s
+    failure-rate-threshold: ${PROVIDER_CB_FAILURE_RATE:50}
+    sliding-window-size: ${PROVIDER_CB_WINDOW:20}
+    minimum-number-of-calls: ${PROVIDER_CB_MIN_CALLS:10}   # raise this AND the window (e.g. 100000) to effectively disable the breaker
+    open-state-duration: ${PROVIDER_CB_OPEN_FOR:10s}
   mock:
     enabled: ${PROVIDER_MOCK_ENABLED:false}
 

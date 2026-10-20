@@ -4,3 +4,5 @@ target/
 .vscode/
 .DS_Store
 *.log
+backups/
+presentacion/privado/

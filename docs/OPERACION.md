@@ -31,10 +31,20 @@ crece sin parar y obliga a particionar/archivar.
 | **Proveedor** | Aislado por circuit breaker | Si el proveedor cae, el servicio falla rápido (502) y no consume hilos; al recuperarse, el breaker se cierra solo. |
 | **Eventos** | Outbox + Kafka (cuando haga falta) | Para publicar `executed/rejected/failed` sin perder eventos: escribir el evento en la misma transacción de BD que el estado y un relay lo publica. No se añade hoy para no sobre-ingenierizar. |
 
-### Despliegue en Kubernetes
-Manifiestos en `deploy/k8s/` (aplicar con `kubectl apply -k deploy/k8s` tras crear el Secret real):
-Deployment (3 réplicas, probes de liveness/readiness, `preStop` + *graceful shutdown* para no cortar peticiones
-en vuelo, límites de recursos, contexto de seguridad endurecido), Service, HPA, PDB, NetworkPolicy y CronJob de backup.
+### Despliegue en Kubernetes (opcional, modular)
+`deploy/k8s/` usa Kustomize con **núcleo + componentes opt-in**, así cada capacidad se enciende o apaga sin editar manifiestos:
+
+| Pieza | Qué contiene | Obligatoria |
+|---|---|---|
+| `base/` | Deployment (probes, `preStop` + *graceful shutdown*, límites, contexto de seguridad endurecido), Service, ConfigMap | Sí (si usas K8s) |
+| `components/autoscaling` | HPA 3–20 réplicas + PodDisruptionBudget | No |
+| `components/network-policy` | Solo el ingress controller llega a la API | No |
+| `components/backup` | PVC + CronJob de `pg_dump` verificado cada 6 h | No |
+| `overlays/local` | kind/minikube gratis: PostgreSQL desechable, proveedor mock, 2 réplicas | Demo |
+| `overlays/local-full` | `local` + los tres componentes | Demo |
+| `overlays/prod-example` | Ejemplo con BD gestionada externa y Secret creado fuera del repo | Solo referencia |
+
+Probar sin costo: `make k8s-local` o `make k8s-local-full` (requiere Docker, kind y kubectl). Ver `docs/OPCIONALES.md`.
 
 ## 3. Backups y recuperación
 

@@ -1,3 +1,5 @@
+# CORE (default):      docker compose up --build            -> postgres + api (embedded mock provider)
+# OPTIONAL backups:    docker compose --profile backup run --rm backup
 services:
   postgres:
     image: postgres:16-alpine
@@ -23,7 +25,26 @@ services:
       DB_USER: transactions
       DB_PASSWORD: transactions
       SECURITY_API_KEYS: ${SECURITY_API_KEYS:-dev-key-change-me}   # override with a real secret
-      PROVIDER_MOCK_ENABLED: "true"          # embedded mock provider
+      PROVIDER_MOCK_ENABLED: "true"                                  # embedded mock provider
       PROVIDER_BASE_URL: http://localhost:8080
+      PROVIDER_RETRY_MAX_ATTEMPTS: ${PROVIDER_RETRY_MAX_ATTEMPTS:-3} # try 1 to turn retries off
     ports:
       - "8080:8080"
+
+  # OPTIONAL: only runs with --profile backup. One-shot logical backup into ./backups
+  backup:
+    profiles: ["backup"]
+    image: postgres:16            # Debian variant: has bash, needed by the scripts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: transactions
+      PGPASSWORD: transactions
+      PGDATABASE: transactions
+      BACKUP_DIR: /backups
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./backups:/backups
+    entrypoint: ["/scripts/backup.sh"]

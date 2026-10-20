@@ -19,10 +19,10 @@ lo pendiente, con ⏳.
 | Doble ejecución de dinero | Idempotencia con `UNIQUE` + id enviado al proveedor | ✅ | `TransactionService`, migración V1 |
 | Redondeo / pérdida de precisión | `BigDecimal` + `NUMERIC(19,2)`, se rechazan >2 decimales | ✅ | `TransactionRules`, V1 |
 | Abuso / DoS de bajo nivel | Timeouts hacia el proveedor, circuit breaker, pool acotado, paginación acotada | ✅ | `ProviderConfig`, `application.yml` |
-| Contenedor comprometido | Imagen con usuario no root; en K8s: `runAsNonRoot`, FS de solo lectura, sin capabilities, `seccomp` | ✅ | `Dockerfile`, `deploy/k8s/deployment.yaml` |
-| Movimiento lateral en el cluster | NetworkPolicy: solo el ingress controller llega a la API | ✅ | `deploy/k8s/networkpolicy.yaml` |
+| Contenedor comprometido | Imagen con usuario no root; en K8s: `runAsNonRoot`, FS de solo lectura, sin capabilities, `seccomp` | ✅ | `Dockerfile`, `deploy/k8s/base/deployment.yaml` |
+| Movimiento lateral en el cluster | NetworkPolicy: solo el ingress controller llega a la API | ✅ | `deploy/k8s/components/network-policy/` |
 | Dependencias vulnerables | Dependabot (Maven, Docker, Actions) + build en CI | ✅ | `.github/` |
-| Documentación expuesta en producción | `SPRINGDOC_ENABLED=false` en el ConfigMap de producción | ✅ | `deploy/k8s/configmap.yaml` |
+| Documentación expuesta en producción | `SPRINGDOC_ENABLED=false` en el ConfigMap de producción | ✅ | `deploy/k8s/base/configmap.yaml` |
 | Interceptación en tránsito | TLS terminado en el ingress/gateway; entre pods, mTLS con service mesh si se requiere | 🏗️ | plataforma |
 | Autenticación de clientes a escala (JWT/OAuth2/mTLS, scopes por cliente) | La API key es el mínimo viable servicio-a-servicio; en producción lo natural es OAuth2 client-credentials en el API gateway | 🏗️/⏳ | gateway |
 | Rate limiting por cliente/cuenta | En el gateway (más eficiente y centralizado que en cada réplica) | 🏗️ | gateway |

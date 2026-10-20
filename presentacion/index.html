@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transaction Execution API · Backend Challenge Spin</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#14181f; --muted:#5b6574; --line:#d9dee6;
+  --accent:#2457d6; --ok:#12805c; --warn:#b45309; --bad:#b42318; --chip:#e8eefc;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1116; --card:#171c24; --ink:#e8ecf2; --muted:#9aa5b5; --line:#2a313c;
+         --accent:#6d9bff; --ok:#3ccf9b; --warn:#f2b45a; --bad:#ff7b72; --chip:#1f2a44; }
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.deck{height:100%;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;padding:5vh 7vw 9vh;display:none;flex-direction:column;overflow:auto}
+.slide.active{display:flex}
+h1{font-size:clamp(28px,5vw,56px);margin:0 0 .3em;line-height:1.1}
+h2{font-size:clamp(22px,3.2vw,38px);margin:0 0 .6em;line-height:1.15}
+h3{font-size:clamp(15px,1.7vw,20px);margin:.2em 0 .4em}
+p,li,td,th{font-size:clamp(14px,1.55vw,19px);line-height:1.5}
+.muted{color:var(--muted)}
+.tag{display:inline-block;background:var(--chip);color:var(--accent);padding:.15em .6em;border-radius:99px;font-size:.8em;font-weight:600}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:800px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h3{margin-top:0}
+.big{font-size:clamp(28px,4.2vw,52px);font-weight:700;color:var(--accent);line-height:1}
+ul{margin:.3em 0 0;padding-left:1.2em}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{background:var(--chip);padding:.05em .35em;border-radius:6px;font-size:.9em}
+pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;overflow:auto;font-size:clamp(11px,1.2vw,15px);line-height:1.45;margin:.4em 0}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.step{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.step b{display:block;color:var(--accent);font-size:1.4em}
+.states{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:.6em 0}
+.chip{padding:.3em .9em;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:600}
+.arrow{color:var(--muted)}
+.notes{display:none;margin-top:auto;border-top:1px dashed var(--line);padding-top:10px;color:var(--muted)}
+body.show-notes .notes{display:block}
+.notes::before{content:"Notas del orador: ";font-weight:700}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:8px 14px;
+  background:var(--card);border-top:1px solid var(--line);z-index:10}
+.nav button{background:var(--chip);color:var(--accent);border:0;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer}
+.bar{flex:1;height:5px;background:var(--line);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+.hint{color:var(--muted);font-size:12px}
+svg text{fill:var(--ink);font-family:inherit}
+svg .box{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+svg .core{fill:var(--chip);stroke:var(--accent);stroke-width:2}
+svg .line{stroke:var(--muted);stroke-width:1.6;fill:none}
+svg .dash{stroke:var(--muted);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+@media print{
+  .nav{display:none} .deck{height:auto;overflow:visible}
+  .slide{display:flex!important;position:relative;min-height:100vh;page-break-after:always}
+  body.show-notes .notes,.notes{display:block}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide">
+  <span class="tag">Backend Challenge · Spin</span>
+  <h1>Transaction Execution API</h1>
+  <h2 class="muted">En dinero: nunca ejecutar dos veces, nunca perder una operación</h2>
+  <div class="grid g3" style="margin-top:2vh">
+    <div class="card"><h3>Núcleo</h3><p>Cumple el enunciado completo. Se prueba con un comando, sin nube ni costo.</p></div>
+    <div class="card"><h3>Calidad de producción</h3><p>Idempotencia, resiliencia, seguridad, tests contra PostgreSQL real.</p></div>
+    <div class="card"><h3>Opcionales</h3><p>Kubernetes, autoescalado, backups, CI: existen y se activan solo si se piden.</p></div>
+  </div>
+  <p class="notes">Presentarme en 10 segundos. Idea central: el diseño gira alrededor de no duplicar ni perder dinero. Aclarar desde el inicio que todo lo avanzado es opcional y controlable.</p>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h2>El reto</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Qué pide el enunciado</h3>
+      <ul>
+        <li><code>POST /transactions</code>: validar, aplicar reglas, ejecutar en el proveedor, persistir, responder</li>
+        <li><code>GET /transactions</code>: filtros <code>accountId</code>, <code>status</code>, <code>type</code> + paginación</li>
+        <li>Proveedor externo <b>mockeado</b> (éxito y falla)</li>
+        <li>Reglas: monto &gt; 1.00 · débito ≤ 10,000.00 · solo MXN</li>
+      </ul></div>
+    <div class="card"><h3>Qué valoran</h3>
+      <ul>
+        <li>Código limpio y capas bien separadas</li>
+        <li>Testing con mocks del proveedor</li>
+        <li>Desacople del cliente HTTP y resiliencia (plus)</li>
+        <li>Pragmatismo: no sobre-ingenierizar</li>
+        <li>README con decisiones y uso de IA</li>
+      </ul></div>
+  </div>
+  <p class="muted" style="margin-top:2vh">Contexto clave: millones de transacciones diarias → escalabilidad y rendimiento desde el diseño.</p>
+  <p class="notes">Subrayar "millones al día": cada decisión posterior (sin @Transactional, idempotencia en BD, pool) viene de ahí.</p>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h2>Qué entregué: núcleo y opcionales</h2>
+  <div class="grid g2">
+    <div class="card"><h3 class="ok">NÚCLEO · gratis, local</h3>
+      <ul>
+        <li>API completa + reglas + proveedor mock + persistencia</li>
+        <li>Idempotencia, reintentos, circuit breaker, API key</li>
+        <li>Tests unitarios e integración (incluye PostgreSQL real)</li>
+        <li>Docker Compose, demo guiada, documentación</li>
+      </ul>
+      <pre>make run     # sin Docker
+make up      # con PostgreSQL
+make demo    # 8 escenarios</pre></div>
+    <div class="card"><h3 class="warn">OPCIONAL · solo si se pide</h3>
+      <ul>
+        <li>Backups verificados + restore drill</li>
+        <li>Kubernetes local (kind): <b>$0</b></li>
+        <li>Autoescalado, PDB, NetworkPolicy, CronJob</li>
+        <li>CI y Dependabot en GitHub</li>
+        <li>Nube real: solo ejemplo documentado</li>
+      </ul>
+      <pre>make backup
+make k8s-local
+make k8s-local-full</pre></div>
+  </div>
+  <p class="muted" style="margin-top:2vh"><code>make help</code> lista todo. Ningún opcional corre por defecto.</p>
+  <p class="notes">Este es el control que mostré: puedo evaluar el reto sin tocar K8s ni nube, y si quieren ver operación, enciendo cada pieza con un comando. Abrir docs/OPCIONALES.md si preguntan costos.</p>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h2>Arquitectura: todo apunta al dominio</h2>
+  <svg viewBox="0 0 900 360" width="100%" style="max-height:62vh" role="img" aria-label="Arquitectura por capas">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor" style="color:var(--muted)"/></marker></defs>
+    <rect class="box" x="10" y="150" width="110" height="60" rx="10"/><text x="65" y="185" text-anchor="middle" font-size="15">Cliente</text>
+    <rect class="box" x="170" y="140" width="150" height="80" rx="10"/><text x="245" y="172" text-anchor="middle" font-size="15" font-weight="700">api</text><text x="245" y="194" text-anchor="middle" font-size="12">Controller · DTOs · errores</text>
+    <rect class="box" x="170" y="40" width="150" height="60" rx="10"/><text x="245" y="66" text-anchor="middle" font-size="14" font-weight="700">security</text><text x="245" y="86" text-anchor="middle" font-size="12">API key, deny-by-default</text>
+    <rect class="core" x="370" y="120" width="170" height="120" rx="12"/><text x="455" y="150" text-anchor="middle" font-size="15" font-weight="700">application</text><text x="455" y="170" text-anchor="middle" font-size="12">TransactionService</text>
+    <text x="455" y="198" text-anchor="middle" font-size="15" font-weight="700">domain</text><text x="455" y="218" text-anchor="middle" font-size="12">reglas · Transaction · puertos</text>
+    <rect class="box" x="600" y="60" width="160" height="70" rx="10"/><text x="680" y="90" text-anchor="middle" font-size="14" font-weight="700">persistence</text><text x="680" y="110" text-anchor="middle" font-size="12">adaptador JPA</text>
+    <rect class="box" x="600" y="230" width="160" height="70" rx="10"/><text x="680" y="260" text-anchor="middle" font-size="14" font-weight="700">provider</text><text x="680" y="280" text-anchor="middle" font-size="12">HTTP + Retry + Breaker</text>
+    <rect class="box" x="800" y="68" width="90" height="54" rx="10"/><text x="845" y="100" text-anchor="middle" font-size="13">PostgreSQL</text>
+    <rect class="box" x="800" y="238" width="90" height="54" rx="10"/><text x="845" y="270" text-anchor="middle" font-size="13">Proveedor</text>
+    <path class="line" d="M120 180H170" marker-end="url(#a)"/>
+    <path class="line" d="M245 140V100" marker-end="url(#a)"/>
+    <path class="line" d="M320 180H370" marker-end="url(#a)"/>
+    <path class="dash" d="M600 95L540 140" marker-end="url(#a)"/>
+    <path class="dash" d="M600 265L540 222" marker-end="url(#a)"/>
+    <path class="line" d="M760 95H800" marker-end="url(#a)"/>
+    <path class="line" d="M760 265H800" marker-end="url(#a)"/>
+    <text x="570" y="150" font-size="11" fill="currentColor" style="fill:var(--muted)">implementa</text>
+    <text x="570" y="240" font-size="11" style="fill:var(--muted)">implementa</text>
+  </svg>
+  <p><b>domain</b> y <b>application</b> no importan Spring, JPA ni HTTP: reglas y flujo se prueban sin levantar el framework.
+     El proveedor y la base de datos son <b>puertos</b> con adaptadores intercambiables.</p>
+  <p class="notes">Línea punteada = el adaptador implementa la interfaz del dominio (inversión de dependencias). Beneficio concreto: 18 tests del núcleo corren con solo el JDK. Costo: dos interfaces. No agregué CQRS, mensajería ni cache: sería sobre-ingeniería hoy.</p>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h2>Flujo de <code>POST /transactions</code></h2>
+  <div class="flow">
+    <div class="step"><b>1</b>Autenticación<br><span class="muted">API key · 401</span></div>
+    <div class="step"><b>2</b>Validación<br><span class="muted">formato · 400</span></div>
+    <div class="step"><b>3</b>Idempotencia<br><span class="muted">¿ya existe? · 200 / 409</span></div>
+    <div class="step"><b>4</b>Reglas de negocio<br><span class="muted">422 · no toca BD ni proveedor</span></div>
+    <div class="step"><b>5</b>Guardar <code>PENDING</code><br><span class="muted">commit corto</span></div>
+    <div class="step"><b>6</b>Proveedor<br><span class="muted">timeout · retry · breaker</span></div>
+    <div class="step"><b>7</b>Estado final<br><span class="muted">EXECUTED · REJECTED · FAILED</span></div>
+  </div>
+  <p style="margin-top:2vh"><b>Sin <code>@Transactional</code> a propósito:</b> no se retiene una conexión del pool mientras se espera al proveedor.
+  Cada escritura es su propia transacción corta.</p>
+  <p class="notes">Recorrer los 7 pasos. Insistir en el paso 5 y en el porqué de no usar @Transactional: con ~175 peticiones en vuelo se agotaría el pool aunque la BD esté ociosa.</p>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h2>Estados y respuestas</h2>
+  <div class="states">
+    <span class="chip">PENDING</span><span class="arrow">→</span>
+    <span class="chip ok">EXECUTED</span><span class="arrow">·</span>
+    <span class="chip warn">REJECTED</span><span class="arrow">·</span>
+    <span class="chip bad">FAILED</span>
+  </div>
+  <table>
+    <tr><th>Situación</th><th>HTTP</th><th>Detalle</th></tr>
+    <tr><td>Aprobada</td><td>201</td><td><code>EXECUTED</code> + <code>balanceAfter</code></td></tr>
+    <tr><td>Rechazada por el proveedor</td><td>201</td><td><code>REJECTED</code> + <code>errorCode</code> (respuesta definitiva, se registra)</td></tr>
+    <tr><td>Proveedor no disponible</td><td>502</td><td><code>FAILED</code>: resultado <b>desconocido</b>, requiere conciliación</td></tr>
+    <tr><td>Misma Idempotency-Key</td><td>200 / 409</td><td>Réplica de la original / payload distinto</td></tr>
+    <tr><td>Regla de negocio</td><td>422</td><td><code>AMOUNT_TOO_LOW</code>, <code>DEBIT_LIMIT_EXCEEDED</code>, <code>UNSUPPORTED_CURRENCY</code></td></tr>
+  </table>
+  <p class="notes">Pregunta probable: ¿por qué 201 en REJECTED? Porque la transacción se creó y se registró; el resultado de negocio está en status. Es defendible, hay alternativa (200/422); abrir la conversación sobre su preferencia.</p>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h2>Decisión 1 · Guardar <code>PENDING</code> antes de llamar al proveedor</h2>
+  <div class="grid g2">
+    <div class="card"><h3 class="bad">Persistir solo al final</h3>
+      <p>Si el proceso muere después de que el proveedor movió dinero y antes de guardar, la operación <b>desaparece sin rastro</b>.</p></div>
+    <div class="card"><h3 class="ok">PENDING primero</h3>
+      <p>Siempre queda evidencia. Una <code>PENDING</code> vieja o una <code>FAILED</code> se detecta y se concilia contra el proveedor.</p></div>
+  </div>
+  <p class="muted" style="margin-top:2vh">Costo: un <code>UPDATE</code> extra por operación. Es un desvío consciente del orden del enunciado, documentado.</p>
+  <p class="notes">Esta es la decisión más importante a defender. Respuesta corta: "prefiero pagar un UPDATE a perder una transacción".</p>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h2>Decisión 2 · Idempotencia arbitrada por la base de datos</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Cómo</h3>
+      <ul>
+        <li>Header <code>Idempotency-Key</code> + restricción <code>UNIQUE</code></li>
+        <li>Si dos peticiones compiten, una gana y la otra recibe la transacción ganadora</li>
+        <li>Mismo id de transacción viaja al proveedor como <code>Idempotency-Key</code></li>
+      </ul></div>
+    <div class="card"><h3>Por qué en la BD y no en memoria</h3>
+      <ul>
+        <li>Funciona con N réplicas sin coordinación</li>
+        <li>Probado con 12 hilos concurrentes sobre PostgreSQL real</li>
+        <li>Los reintentos del cliente no duplican dinero</li>
+      </ul></div>
+  </div>
+  <p class="notes">Si preguntan cómo sé que el test prueba algo: el sleep amplía la carrera, el latch arranca los hilos juntos, y si quito el UNIQUE el test falla (lo comprobé: TODO verificar antes de decirlo).</p>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h2>Rechazo ≠ caída: resiliencia con criterio</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Rechazo del proveedor</h3>
+      <p>Respuesta <b>definitiva</b> (p. ej. saldo insuficiente). Es un valor de retorno: <b>no se reintenta</b> y <b>no cuenta</b> para el circuit breaker.</p></div>
+    <div class="card"><h3>Caída / timeout / 5xx</h3>
+      <p>Resultado ambiguo. Se reintenta, el breaker lo cuenta, y si falla queda <code>FAILED</code> para conciliar.</p></div>
+  </div>
+  <pre>Retry( CircuitBreaker( HTTP ) )
+timeouts: connect 1s · read 2s
+retry: 3 intentos, backoff exponencial 200ms x2 con jitter
+breaker: abre con >=50% fallas (>=10 llamadas), 10s abierto, 3 de prueba
+perillas por variable de entorno → apagar cada mecanismo y ver la diferencia en vivo</pre>
+  <p class="notes">Límite honesto: mi mock no respeta la Idempotency-Key; un proveedor real debería. Si no la soporta, max-attempts=1 y se resuelve con conciliación.</p>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h2>Seguridad: lo implementado y lo que corresponde al gateway</h2>
+  <div class="grid g2">
+    <div class="card"><h3 class="ok">En el servicio</h3>
+      <ul>
+        <li>API key en tiempo constante (SHA-256 + <code>isEqual</code>), rotación con varias keys</li>
+        <li>Deny-by-default; la app no arranca sin key (fail-safe)</li>
+        <li>Validación estricta, consultas parametrizadas, errores sin fugas</li>
+        <li>Contenedor no root, FS de solo lectura, NetworkPolicy (opcional)</li>
+        <li>Dependabot + CI</li>
+      </ul></div>
+    <div class="card"><h3 class="warn">Plataforma / siguiente paso</h3>
+      <ul>
+        <li>TLS y mTLS en ingress / service mesh</li>
+        <li>OAuth2 y rate limiting por cliente en el API gateway</li>
+        <li>Cifrado en reposo y de backups; usuario de BD de mínimo privilegio</li>
+        <li><code>client_id</code> por transacción para auditoría</li>
+      </ul></div>
+  </div>
+  <p class="notes">Por qué API key y no JWT: es servicio a servicio; JWT lo emite y valida el IdP/gateway. Migrar es cambiar un filtro en infrastructure/security sin tocar el dominio.</p>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h2>Escalar sin cambiar código</h2>
+  <p class="muted">Supuestos: 5 M tx/día · pico 10× · proveedor 300 ms</p>
+  <div class="grid g4">
+    <div class="card"><div class="big">58</div><p>tx/s promedio</p></div>
+    <div class="card"><div class="big">580</div><p>tx/s en pico</p></div>
+    <div class="card"><div class="big">~175</div><p>peticiones en vuelo<br><span class="muted">(580 × 0.3 s)</span></p></div>
+    <div class="card"><div class="big">~5</div><p>conexiones de BD ocupadas en promedio</p></div>
+  </div>
+  <ul style="margin-top:2vh">
+    <li>El cuello de botella es <b>esperar al proveedor</b>, no la BD → por eso no se retiene conexión durante la llamada.</li>
+    <li>Servicio sin estado → más réplicas (HPA 3–20, <i>opcional</i>); la corrección la garantiza la BD.</li>
+    <li>Crecimiento de datos (~1.8 TB/año): particionado por fecha, paginación por cursor, PgBouncer, réplica de lectura.</li>
+  </ul>
+  <p class="notes">Ley de Little: concurrencia = tasa × latencia. Ojo con tablas particionadas: el UNIQUE debe incluir la clave de partición → tabla de idempotencia aparte con TTL.</p>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h2>Operación opcional: modular y sin costo para probarla</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Kubernetes (Kustomize)</h3>
+      <ul>
+        <li><b>base</b>: Deployment (probes, graceful shutdown), Service, ConfigMap</li>
+        <li><b>componentes opt-in</b>: autoescalado + PDB · NetworkPolicy · backup</li>
+        <li><b>overlays</b>: <code>local</code> (kind, $0) · <code>local-full</code> · <code>prod-example</code> (solo referencia)</li>
+      </ul></div>
+    <div class="card"><h3>Backups en 3 capas</h3>
+      <ul>
+        <li>Alta disponibilidad con failover (RPO ≈ 0)</li>
+        <li>PITR con WAL (minutos)</li>
+        <li>Dump lógico verificado + restore drill <code>make backup</code> / <code>make restore</code></li>
+      </ul>
+      <p class="muted">Un backup no probado no existe.</p></div>
+  </div>
+  <p class="notes">Mi perfil DevOps aquí: modularidad (Kustomize components) para encender o apagar cada capacidad. Nube real: no ejecutada, solo ejemplo, por costo.</p>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h2>Testing</h2>
+  <table>
+    <tr><th>Nivel</th><th>Qué prueba</th><th>Cómo</th></tr>
+    <tr><td>Dominio</td><td>Reglas: límites, mínimo exclusivo, moneda, decimales</td><td>JUnit puro</td></tr>
+    <tr><td>Servicio</td><td>Éxito, rechazo, caída, idempotencia, carrera, 422 sin llamar al proveedor</td><td>Fakes hechos a mano</td></tr>
+    <tr><td>Adaptador HTTP</td><td>Traducción de respuestas del proveedor, timeouts</td><td>MockRestServiceServer</td></tr>
+    <tr><td>Resiliencia</td><td>Reintenta ante caída, no ante rechazo, circuito abierto falla rápido</td><td>JUnit + Resilience4j</td></tr>
+    <tr><td>API completa</td><td>Códigos HTTP, validación, filtros, paginación, 401</td><td>MockMvc + H2</td></tr>
+    <tr><td>PostgreSQL real</td><td>Migración, mapeo, 12 hilos con la misma key</td><td>Testcontainers (se omite sin Docker)</td></tr>
+  </table>
+  <p class="notes">Verificar antes de presentar: TODO-RICK resultado de make verify en mi máquina. Decir la verdad sobre lo que corrí.</p>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h2>Demo en vivo · <code>make demo</code></h2>
+  <pre>1. CREDIT 1500.00           → EXECUTED, balance 5500.00
+2. misma Idempotency-Key    → 200, sin volver a llamar al proveedor
+3. misma key, otro monto    → 409
+4. cuenta -nofunds          → 201 REJECTED / INSUFFICIENT_FUNDS
+5. cuenta -flaky            → falla 2 veces, el retry lo deja EXECUTED
+6. reglas de negocio        → 422 ×3, sin tocar el proveedor
+7. cuenta -down             → 502 FAILED (repetir: el breaker abre)
+8. sin API key              → 401</pre>
+  <p class="muted">Plan B si falla Docker: <code>make run</code> (H2 + mock embebido). Swagger en <code>/swagger-ui.html</code>.</p>
+  <p class="notes">Dejar el paso 5 para mostrar la perilla: PROVIDER_RETRY_MAX_ATTEMPTS=1 y repetir → termina FAILED. Esto demuestra por qué existe el retry.</p>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h2>Uso de IA: cómo, por qué estos tiempos y qué hice yo</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Cómo la usé</h3>
+      <ul><li>Claude: diseño, código inicial, tests, manifiestos, docs</li><li>Plan de otra IA como <b>contraste</b>; adopté y descarté con criterio</li></ul></div>
+    <div class="card"><h3>Por qué el tiempo</h3>
+      <ul><li>Escritura repetitiva → IA</li><li>Revisión, depuración y comprensión → yo</li><li>Tiempo real: TODO-RICK h (estimado sin IA: 26–37 h)</li></ul></div>
+    <div class="card"><h3>Lo que hice yo</h3>
+      <ul><li>Compilar y correr todo: TODO-RICK</li><li>Probar que los tests pueden fallar (quitar UNIQUE)</li><li>Ejercicios de modificación y ensayo</li></ul></div>
+  </div>
+  <p style="margin-top:2vh">Orden de construcción: dominio sin framework → infraestructura → API/seguridad → integración → operación → docs.
+  Cada capa se apoya en la anterior ya verificada.</p>
+  <p class="notes">Detalle completo en docs/USO-DE-IA.md. Transparencia: lo que la IA no verificó (compilación en su entorno) lo verifiqué yo. Decir solo lo que es cierto.</p>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h2>Límites honestos y siguientes pasos</h2>
+  <div class="grid g2">
+    <div class="card"><h3>No implementado (diseñado)</h3>
+      <ul>
+        <li>Conciliación de <code>PENDING</code> / <code>FAILED</code> contra el proveedor</li>
+        <li>Métricas Prometheus, alertas, trazas</li>
+        <li><code>client_id</code> para auditoría</li>
+        <li>Paginación por cursor; particionado por fecha</li>
+      </ul></div>
+    <div class="card"><h3>Con más tiempo</h3>
+      <ul>
+        <li>Outbox + Kafka para eventos de transacción</li>
+        <li>Contrato de idempotencia con el proveedor real</li>
+        <li>Réplica de lectura para <code>GET</code></li>
+        <li>OAuth2 y rate limiting en el gateway</li>
+      </ul></div>
+  </div>
+  <p class="notes">Decirlos yo antes de que me los pregunten es una señal de criterio. Cerrar con una pregunta: ¿qué decisión les parece más discutible? (sugerir 201 en REJECTED).</p>
+</section>
+
+<!-- 17 -->
+<section class="slide" style="justify-content:center;text-align:center">
+  <h1>¿Preguntas?</h1>
+  <p class="muted">README · docs/ARQUITECTURA · docs/SEGURIDAD · docs/OPERACION · docs/OPCIONALES · docs/USO-DE-IA</p>
+</section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" aria-label="Anterior">←</button>
+  <button id="next" aria-label="Siguiente">→</button>
+  <div class="bar"><i id="progress"></i></div>
+  <span id="counter" class="hint"></span>
+  <span class="hint">← → navegar · N notas · P imprimir/PDF</span>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0;
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, k){ s.classList.toggle('active', k === i); });
+    document.getElementById('progress').style.width = ((i + 1) / slides.length * 100) + '%';
+    document.getElementById('counter').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  document.getElementById('prev').onclick = function(){ show(i - 1); };
+  document.getElementById('next').onclick = function(){ show(i + 1); };
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'n' || e.key === 'N') document.body.classList.toggle('show-notes');
+    else if (e.key === 'p' || e.key === 'P') window.print();
+  });
+  var start = parseInt((location.hash || '').replace('#', ''), 10);
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>
