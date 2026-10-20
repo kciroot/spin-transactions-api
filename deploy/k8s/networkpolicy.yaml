@@ -1,0 +1,17 @@
+# Default-deny ingress for the namespace; only the ingress controller namespace may reach the API.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: transactions-api
+  namespace: transactions
+spec:
+  podSelector:
+    matchLabels: { app: transactions-api }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx   # adjust to your ingress controller namespace
+      ports:
+        - { protocol: TCP, port: 8080 }

@@ -22,6 +22,7 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/transactions
       DB_USER: transactions
       DB_PASSWORD: transactions
+      SECURITY_API_KEYS: ${SECURITY_API_KEYS:-dev-key-change-me}   # override with a real secret
       PROVIDER_MOCK_ENABLED: "true"          # embedded mock provider
       PROVIDER_BASE_URL: http://localhost:8080
     ports:

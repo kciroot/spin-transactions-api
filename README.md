@@ -3,7 +3,9 @@
 API REST que recibe transacciones de crédito/débito, las ejecuta contra un proveedor externo, persiste el
 resultado y expone consultas con filtros y paginación. Reto técnico de backend de Spin.
 
-**Stack:** Java 17 · Spring Boot 3.3 · PostgreSQL (Flyway) · Resilience4j · JUnit 5 / Mockito
+**Stack:** Java 17 · Spring Boot 3.3 · Spring Security · PostgreSQL (Flyway) · Resilience4j · JUnit 5 / Mockito / Testcontainers
+
+**Documentación extendida:** [Arquitectura](docs/ARQUITECTURA.md) · [Seguridad](docs/SEGURIDAD.md) · [Operación, escalado y backups](docs/OPERACION.md)
 
 ---
 
@@ -26,21 +28,30 @@ Health (liveness/readiness): `/actuator/health`.
 
 ### Tests
 ```bash
-mvn test
+mvn verify
 ```
+Incluye tests unitarios (reglas, servicio, adaptador HTTP, resiliencia), integración con H2 y un test contra
+**PostgreSQL real** con Testcontainers (migración, mapeo y concurrencia de idempotencia). Este último se omite
+automáticamente si Docker no está disponible.
+
+### Autenticación
+Todas las rutas requieren el header `X-API-Key` (excepto `/actuator/health/**` y la documentación de la API).
+En el perfil `local` la key es `local-dev-key`; en docker compose es `dev-key-change-me` (sobrescribible con
+`SECURITY_API_KEYS`). La aplicación **no arranca** si no hay ninguna key configurada.
 
 ### Ejemplos
 ```bash
 # Crédito (el proveedor mock arranca cada cuenta en 4000.00, responde balance 5500.00)
 curl -i -X POST localhost:8080/transactions -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: 7d1f0c2e-0001' \
+  -H 'X-API-Key: local-dev-key' -H 'Idempotency-Key: 7d1f0c2e-0001' \
   -d '{"accountId":"acc-123456","type":"CREDIT","amount":1500.00,"currency":"MXN","description":"Transferencia recibida"}'
 
 # Consulta con filtros y paginación
-curl 'localhost:8080/transactions?accountId=acc-123456&type=CREDIT&status=EXECUTED&page=1&limit=20'
+curl -H 'X-API-Key: local-dev-key' \
+  'localhost:8080/transactions?accountId=acc-123456&type=CREDIT&status=EXECUTED&page=1&limit=20'
 
 # Violación de regla de negocio -> 422 (no se llama al proveedor)
-curl -i -X POST localhost:8080/transactions -H 'Content-Type: application/json' \
+curl -i -X POST localhost:8080/transactions -H 'Content-Type: application/json' -H 'X-API-Key: local-dev-key' \
   -d '{"accountId":"acc-123456","type":"DEBIT","amount":10000.01,"currency":"MXN"}'
 ```
 
@@ -73,6 +84,7 @@ Header opcional `Idempotency-Key`. Body según el enunciado.
 | Misma key con payload distinto | `409` | `IDEMPOTENCY_KEY_CONFLICT` |
 | Regla de negocio violada | `422` | `AMOUNT_TOO_LOW`, `DEBIT_LIMIT_EXCEEDED`, `UNSUPPORTED_CURRENCY`, `INVALID_AMOUNT_PRECISION` |
 | Request inválido | `400` | `VALIDATION_ERROR` con detalle por campo |
+| Sin API key o inválida | `401` | `UNAUTHORIZED` |
 
 Todos los errores son `application/problem+json` (RFC 7807) con un campo `code` estable.
 
@@ -94,7 +106,11 @@ domain/                   Transaction, reglas de negocio, puertos (TransactionRe
 infrastructure/
   persistence/            Adaptador JPA del puerto de repositorio
   provider/               Adaptador HTTP + decorador de resiliencia + mock del proveedor
-  config/                 Cableado de beans
+  security/               Autenticación por API key (deny-by-default)
+  config/                 Cableado de beans y OpenAPI
+deploy/k8s/               Deployment, HPA, PDB, NetworkPolicy, CronJob de backup
+scripts/                  backup.sh / restore.sh (pg_dump / pg_restore verificados)
+docs/                     Arquitectura, seguridad, operación
 ```
 
 Las dependencias apuntan hacia adentro: `domain` y `application` no conocen Spring, JPA ni HTTP. El proveedor y la
@@ -141,12 +157,22 @@ débito máximo 10,000.00 inclusive; solo `MXN` (se normaliza a mayúsculas).
 **Paginación.** Offset/limit con tope de 100 por página. Es lo que pide el enunciado y es simple; con tablas de
 cientos de millones de filas se migraría a paginación por cursor (keyset sobre `created_at, id`).
 
+## Seguridad, crecimiento y backups (resumen)
+- **Seguridad:** API key en tiempo constante con rotación y arranque fail-safe, deny-by-default, validación estricta,
+  errores sin fugas, contenedor no root, NetworkPolicy, Dependabot. Detalle y lo que corresponde al gateway en
+  [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md).
+- **Crecimiento transparente:** servicio sin estado + HPA (3–20 réplicas) + PDB; la idempotencia la arbitra la BD, así
+  que escalar réplicas no cambia la corrección. Dimensionamiento con números y plan para PgBouncer, réplicas de lectura,
+  particionado y paginación por cursor en [`docs/OPERACION.md`](docs/OPERACION.md).
+- **Backups:** estrategia en 3 capas (HA, PITR con WAL, dump lógico verificado), scripts y CronJob incluidos, y
+  procedimiento de restauración.
+
 ## Qué haría después (fuera de alcance deliberadamente)
 - Job de conciliación para `PENDING` antiguos y `FAILED` (consultar al proveedor por id de transacción).
 - Patrón *outbox* + Kafka para publicar eventos `transaction.executed/rejected/failed`.
 - Paginación por cursor y particionado de la tabla por fecha.
 - Métricas (Micrometer/Prometheus): latencia del proveedor, estado del circuit breaker, tasa de `FAILED`.
-- Autenticación/autorización y rate limiting por cuenta en el borde (API gateway).
+- Autenticación fuerte (OAuth2/mTLS) y rate limiting por cliente en el API gateway; columna `client_id` para auditoría.
 
 ## Uso de IA
 Usé Claude como asistente de ingeniería: para discutir el diseño (flujo `PENDING`, idempotencia, política de

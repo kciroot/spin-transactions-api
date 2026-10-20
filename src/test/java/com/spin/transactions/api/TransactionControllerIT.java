@@ -27,12 +27,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 /** Full stack (controller -> service -> JPA/Flyway on H2) with the provider replaced by a Mockito mock. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class TransactionControllerIT {
+
+    private static final String API_KEY = "test-key";
 
     @Autowired
     private MockMvc mvc;
@@ -47,13 +50,17 @@ class TransactionControllerIT {
                 new ProviderResult.Approved("txn-789", new BigDecimal("5500.00"), Instant.now()));
     }
 
+    private static MockHttpServletRequestBuilder authedGet(String url) {
+        return get(url).header("X-API-Key", API_KEY);
+    }
+
     private static String account() {
         return "acc-" + UUID.randomUUID();
     }
 
     private ResultActions postTransaction(String accountId, String type, String amount, String currency, String idempotencyKey)
             throws Exception {
-        var request = post("/transactions").contentType(MediaType.APPLICATION_JSON).content("""
+        var request = post("/transactions").header("X-API-Key", API_KEY).contentType(MediaType.APPLICATION_JSON).content("""
                 {"accountId":"%s","type":"%s","amount":%s,"currency":"%s","description":"Transferencia recibida"}
                 """.formatted(accountId, type, amount, currency));
         if (idempotencyKey != null) {
@@ -111,7 +118,7 @@ class TransactionControllerIT {
 
     @Test
     void malformedRequestReturns400WithFieldErrors() throws Exception {
-        mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/transactions").header("X-API-Key", API_KEY).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"accountId\":\"\",\"type\":\"CREDIT\",\"currency\":\"MXN\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -145,34 +152,53 @@ class TransactionControllerIT {
         }
         postTransaction(account, "DEBIT", "50.00", "MXN", null).andExpect(status().isCreated());
 
-        mvc.perform(get("/transactions").param("accountId", account).param("limit", "3").param("page", "1"))
+        mvc.perform(authedGet("/transactions").param("accountId", account).param("limit", "3").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(3))
                 .andExpect(jsonPath("$.totalElements").value(4))
                 .andExpect(jsonPath("$.totalPages").value(2));
 
-        mvc.perform(get("/transactions").param("accountId", account).param("limit", "3").param("page", "2"))
+        mvc.perform(authedGet("/transactions").param("accountId", account).param("limit", "3").param("page", "2"))
                 .andExpect(jsonPath("$.data.length()").value(1));
 
-        mvc.perform(get("/transactions").param("accountId", account).param("type", "DEBIT"))
+        mvc.perform(authedGet("/transactions").param("accountId", account).param("type", "DEBIT"))
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.data[0].type").value("DEBIT"));
 
-        mvc.perform(get("/transactions").param("accountId", account).param("status", "REJECTED"))
+        mvc.perform(authedGet("/transactions").param("accountId", account).param("status", "REJECTED"))
                 .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
     void invalidPaginationReturns400() throws Exception {
-        mvc.perform(get("/transactions").param("limit", "1000")).andExpect(status().isBadRequest());
-        mvc.perform(get("/transactions").param("page", "0")).andExpect(status().isBadRequest());
-        mvc.perform(get("/transactions").param("status", "NOPE")).andExpect(status().isBadRequest());
+        mvc.perform(authedGet("/transactions").param("limit", "1000")).andExpect(status().isBadRequest());
+        mvc.perform(authedGet("/transactions").param("page", "0")).andExpect(status().isBadRequest());
+        mvc.perform(authedGet("/transactions").param("status", "NOPE")).andExpect(status().isBadRequest());
     }
 
     @Test
     void getByIdReturnsTransactionOr404() throws Exception {
-        mvc.perform(get("/transactions/" + UUID.randomUUID()))
+        mvc.perform(authedGet("/transactions/" + UUID.randomUUID()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("TRANSACTION_NOT_FOUND"));
+    }
+
+    @Test
+    void requestsWithoutOrWithWrongApiKeyAreRejectedWith401() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        mvc.perform(get("/transactions").header("X-API-Key", "wrong-key"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"accountId\":\"a\",\"type\":\"CREDIT\",\"amount\":10,\"currency\":\"MXN\"}"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(provider);
+    }
+
+    @Test
+    void healthProbeIsPublic() throws Exception {
+        mvc.perform(get("/actuator/health")).andExpect(status().isOk());
     }
 }

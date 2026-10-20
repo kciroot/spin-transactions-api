@@ -22,6 +22,15 @@ spring:
 server:
   shutdown: graceful
 
+security:
+  api-keys: ${SECURITY_API_KEYS:}   # comma separated; the app refuses to start if empty
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}    # set to false in production
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+
 provider:
   base-url: ${PROVIDER_BASE_URL:http://localhost:8080}
   connect-timeout: 1s

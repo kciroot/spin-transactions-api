@@ -8,3 +8,7 @@ spring:
 provider:
   mock:
     enabled: true
+
+security:
+  api-keys:
+    - local-dev-key

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transactions-api
+  namespace: transactions
+data:
+  PROVIDER_BASE_URL: "https://provider.example.internal"
+  PROVIDER_MOCK_ENABLED: "false"
+  SPRINGDOC_ENABLED: "false"
+  DB_POOL_SIZE: "20"
