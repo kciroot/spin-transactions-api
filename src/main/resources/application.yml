@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: transactions-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/transactions}
+    username: ${DB_USER:transactions}
+    password: ${DB_PASSWORD:transactions}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate        # schema is owned by Flyway
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  shutdown: graceful
+
+provider:
+  base-url: ${PROVIDER_BASE_URL:http://localhost:8080}
+  connect-timeout: 1s
+  read-timeout: 2s
+  retry:
+    max-attempts: 3
+    initial-backoff: 200ms
+  circuit-breaker:
+    failure-rate-threshold: 50
+    sliding-window-size: 20
+    minimum-number-of-calls: 10
+    open-state-duration: 10s
+  mock:
+    enabled: ${PROVIDER_MOCK_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
