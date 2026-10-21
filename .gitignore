@@ -1,9 +1,83 @@
+# =============================================================================
+# Transaction Execution API - .gitignore
+# Regla: se sube codigo, configuracion de ejemplo y documentacion del proyecto.
+# NO se suben secretos, artefactos generados, archivos de IDE/SO ni material privado.
+# =============================================================================
+
+# --- Secretos y configuracion local (NUNCA subir) ------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets/
+kubeconfig
+*.kubeconfig
+# Secret reales de Kubernetes (se sube solo secret.example.yaml)
+deploy/k8s/**/secret.yaml
+deploy/k8s/**/*.secret.yaml
+application-secret*.yml
+application-secret*.properties
+
+# --- Build / artefactos generados ---------------------------------------------
 target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+dependency-reduced-pom.xml
+
+# --- Datos generados en ejecucion ---------------------------------------------
+backups/
+*.dump
+*.sql.gz
+logs/
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# --- IDE y editores -----------------------------------------------------------
 .idea/
 *.iml
+*.ipr
+*.iws
 .vscode/
+.settings/
+.project
+.classpath
+.factorypath
+nbproject/
+.history/
+
+# --- Sistema operativo --------------------------------------------------------
 .DS_Store
-*.log
-backups/
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- Material PRIVADO de estudio / notas personales (no es parte de la entrega) -
 presentacion/privado/
-.env
+**/privado/
+ESTUDIO*.md
+*-PRIVADO*
+*-privado*
+notas-personales*
+borradores/
+
+# --- Opcional: evidencias de ejecucion --------------------------------------------
+# Se SUBEN por defecto (respaldan tu validacion y el uso de IA).
+# Descomenta la siguiente linea solo si prefieres no publicarlas.
+# evidencias/
