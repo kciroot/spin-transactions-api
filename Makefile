@@ -9,7 +9,7 @@ CLUSTER ?= spin-local
 IMAGE   ?= transactions-api:1.0.0
 FILE    ?=
 
-.PHONY: help run test verify docker-build up down demo up-backup backup restore k8s-local k8s-local-full k8s-down pre-entrega
+.PHONY: help run test verify docker-build up down demo key show-key up-backup backup restore k8s-local k8s-local-full k8s-down pre-entrega
 
 help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -36,6 +36,20 @@ down: ## [NUCLEO] Detiene Docker Compose
 
 demo: ## [NUCLEO] Demo guiada con curl contra una instancia en marcha (BASE_URL / API_KEY configurables)
 	./scripts/demo.sh
+
+# ------------------------------- OPCIONAL: API key propia -------------------------------
+key: ## [OPCIONAL] Genera una API key aleatoria y la guarda en .env (docker compose la toma sola)
+	@if grep -q '^SECURITY_API_KEYS=' .env 2>/dev/null; then \
+	  echo ".env ya tiene una key (borra esa linea para regenerar)."; \
+	else \
+	  k=$$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'); \
+	  echo "SECURITY_API_KEYS=$$k" >> .env; echo "Key generada y guardada en .env"; \
+	fi
+	@$(MAKE) --no-print-directory show-key
+	@echo "Aplica con: make down && make up   |   Demo: API_KEY=\$$(make -s show-key) make demo"
+
+show-key: ## [OPCIONAL] Muestra la API key que usara docker compose
+	@k=$$(grep '^SECURITY_API_KEYS=' .env 2>/dev/null | cut -d= -f2); echo "$${k:-dev-key-change-me}"
 
 # ------------------------------- OPCIONAL: backups -------------------------------
 up-backup: up ## [OPCIONAL] Levanta el nucleo y ademas ejecuta un backup inmediato

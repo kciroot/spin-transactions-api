@@ -13,6 +13,7 @@ Todo lo demás existe, funciona y se puede demostrar, pero **solo se ejecuta si 
 | Demo guiada (8 escenarios) | **NÚCLEO** | `make demo` | $0 | `curl` |
 | Idempotencia, reintentos, circuit breaker, API key | Incluido en el núcleo (ON) | siempre; perillas abajo | $0 | — |
 | Test contra PostgreSQL real (Testcontainers) | Núcleo condicional | corre en `make verify` si hay Docker; si no, se omite solo | $0 | Docker |
+| API key aleatoria propia (Docker Compose) | OPCIONAL | `make key` → guarda `SECURITY_API_KEYS` en `.env` (ignorado por git); `make show-key` la muestra | $0 | `openssl` no hace falta |
 | Backup lógico verificado | OPCIONAL | `make backup` (tras `make up`) | $0 | Docker |
 | Restore drill (a una BD aparte, no toca la original) | OPCIONAL | `make restore FILE=backups/….dump` | $0 | Docker |
 | Kubernetes local (núcleo) | OPCIONAL | `make k8s-local` | $0 (local) | Docker, kind, kubectl |

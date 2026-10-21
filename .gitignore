@@ -6,3 +6,4 @@ target/
 *.log
 backups/
 presentacion/privado/
+.env
