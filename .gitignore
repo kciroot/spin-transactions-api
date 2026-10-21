@@ -41,6 +41,7 @@ backups/
 *.sql.gz
 logs/
 *.log
+!evidencias/*.log      # las evidencias de ejecucion si se suben (ver al final)
 *.tmp
 *.bak
 *.swp
