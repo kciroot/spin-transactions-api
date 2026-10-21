@@ -19,7 +19,7 @@ make demo       # recorrido guiado de 8 escenarios            |   make test # te
 ```
 Todo lo demás (backups, Kubernetes local con autoescalado, NetworkPolicy, CI) **existe pero solo corre si se pide**:
 `make help` lista cada comando y [`docs/OPCIONALES.md`](docs/OPCIONALES.md) explica costo, requisitos y cómo
-activarlo o apagarlo. Material para la presentación: [`presentacion/`](presentacion/).
+activarlo o apagarlo. Material para la presentación y colección de Postman: [`presentacion/`](presentacion/) (importar desde [`presentacion/postman/`](presentacion/postman/LEEME.md)).
 
 ---
 

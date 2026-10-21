@@ -6,14 +6,17 @@ Todo lo que necesitas está en esta carpeta. **Nada de lo opcional es obligatori
 
 1. **Verifica que compila y pasa:** `make verify` (con Docker encendido para que corra el test de PostgreSQL real).
 2. **Levanta y prueba el núcleo:** `make up`, luego `make demo`. Debes ver los 8 escenarios con los códigos esperados.
-3. **Decide qué opcionales mostrarás** (ninguno es obligatorio) y pruébalos una vez:
+3. **Importa la colección de Postman** (`presentacion/postman/`, instrucciones en su `LEEME.md`), selecciona el
+   environment que corresponda y corre la carpeta 1 para confirmar que todo está en verde. Es la forma más visual de
+   hacer la demo ante el equipo.
+4. **Decide qué opcionales mostrarás** (ninguno es obligatorio) y pruébalos una vez:
    - Backups: `make backup` → aparece un `.dump` en `./backups`; `make restore FILE=backups/<archivo>.dump`.
    - Kubernetes local: `make k8s-local-full` (requiere Docker, kind, kubectl) y luego
      `kubectl -n transactions port-forward svc/transactions-api 8080:80` (API key: `local-k8s-key`).
-4. **Completa tus datos reales** en `docs/USO-DE-IA.md`, el README y `presentacion/index.html`
+5. **Completa tus datos reales** en `docs/USO-DE-IA.md`, el README y `presentacion/index.html`
    (tiempos, qué verificaste, tus ejercicios). `make pre-entrega` te muestra exactamente qué falta.
-5. Ensaya la presentación **en voz alta** con el cronómetro (10 min) y las preguntas de tu guía privada.
-6. Abre `presentacion/index.html` en el navegador (funciona sin internet). Teclas: `←` `→` navegan, `N` muestra tus
+6. Ensaya la presentación **en voz alta** con el cronómetro (10 min) y las preguntas de tu guía privada.
+7. Abre `presentacion/index.html` en el navegador (funciona sin internet). Teclas: `←` `→` navegan, `N` muestra tus
    notas del orador, `P` imprime o genera PDF con todas las diapositivas y notas.
 
 ## B. Justo antes de presentar (5 min)
@@ -30,7 +33,7 @@ Todo lo que necesitas está en esta carpeta. **Nada de lo opcional es obligatori
 | 0:00–1:00 | 1–3 | Pitch: dinero → nunca duplicar, nunca perder. Muestra la separación núcleo / opcional. |
 | 1:00–3:00 | 4–6 | Arquitectura, flujo y estados. Insiste en "todo apunta al dominio" y en no usar `@Transactional`. |
 | 3:00–5:00 | 7–9 | Las dos decisiones clave (PENDING e idempotencia) y rechazo ≠ caída. |
-| 5:00–7:00 | 14 | **Demo** en la terminal (`make demo`). Si hay tiempo: `PROVIDER_RETRY_MAX_ATTEMPTS=1` y repetir el paso 5. |
+| 5:00–7:00 | 14 | **Demo** en Postman (o en la terminal con `make demo`). Si hay tiempo: `PROVIDER_RETRY_MAX_ATTEMPTS=1` y repetir el paso 5. |
 | 7:00–8:00 | 10–13 | Seguridad, escalado con números, operación opcional, testing (una frase por tema). |
 | 8:00–9:00 | 15 | Uso de IA: cómo, por qué esos tiempos, qué hiciste tú. Solo verdades. |
 | 9:00–10:00 | 16–17 | Límites honestos, siguientes pasos y una pregunta de vuelta. |
