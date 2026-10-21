@@ -8,8 +8,13 @@
 CLUSTER ?= spin-local
 IMAGE   ?= transactions-api:1.0.0
 FILE    ?=
+PROFILE ?= avg
+RATE    ?=
+DURATION ?= 2m
+LOAD_URL ?= http://host.docker.internal:8080
+API_KEY ?= dev-key-change-me
 
-.PHONY: help run test verify evidencia docker-build up down demo key show-key up-backup backup restore k8s-local k8s-local-full k8s-down pre-entrega
+.PHONY: help run test verify evidencia load scan docker-build up down demo key show-key up-backup backup restore k8s-local k8s-local-full k8s-down pre-entrega
 
 help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -31,6 +36,14 @@ evidencia: ## Genera evidencias REALES de tu ejecucion (tests + demo) en ./evide
 	@bash -c 'mvn -B verify > evidencias/verify.log 2>&1; echo $$? > evidencias/verify.exitcode; tail -n 25 evidencias/verify.log; echo "mvn verify exit code: $$(cat evidencias/verify.exitcode)  (0 = todo en verde)"'
 	@bash -c 'if curl -sf $${BASE_URL:-http://localhost:8080}/actuator/health/readiness >/dev/null; then ./scripts/demo.sh > evidencias/demo.log 2>&1; echo "Demo guardada en evidencias/demo.log"; else echo "La app no esta corriendo: levanta make run o make up y repite para guardar la demo"; fi'
 	@echo "Evidencias en ./evidencias (citalas en docs/USO-DE-IA.md)"
+
+load: ## [OPCIONAL] Prueba de carga con k6 (Docker). PROFILE=avg|peak RATE=.. DURATION=.. (app arriba: PROVIDER_MOCK_LATENCY_MS=300 make up)
+	docker run --rm -i --add-host=host.docker.internal:host-gateway \
+	  -e BASE_URL=$(LOAD_URL) -e API_KEY=$(API_KEY) -e PROFILE=$(PROFILE) -e DURATION=$(DURATION) $(if $(RATE),-e RATE=$(RATE),) \
+	  -v $(CURDIR)/scripts/load:/scripts grafana/k6 run /scripts/k6-transactions.js
+
+scan: ## [OPCIONAL] Escanea la imagen en busca de vulnerabilidades conocidas (Trivy via Docker)
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity HIGH,CRITICAL $(IMAGE)
 
 docker-build: ## [NUCLEO] Construye la imagen Docker
 	docker build -t $(IMAGE) .

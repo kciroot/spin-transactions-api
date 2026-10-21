@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +30,9 @@ class MockProviderController {
 
     private static final BigDecimal INITIAL_BALANCE = new BigDecimal("4000.00");
 
+    @Value("${provider.mock.latency-ms:0}")
+    private long latencyMs;
+
     private final Map<String, BigDecimal> balances = new HashMap<>();
     private final Map<String, AtomicInteger> flakyCalls = new ConcurrentHashMap<>();
 
@@ -38,6 +42,10 @@ class MockProviderController {
     @PostMapping("/execute")
     ResponseEntity<Map<String, Object>> execute(@RequestBody MockRequest request) throws InterruptedException {
         String account = request.accountId();
+
+        if (latencyMs > 0) {
+            Thread.sleep(latencyMs); // simulate a real provider's response time
+        }
 
         if (account.endsWith("-down")) {
             return ResponseEntity.status(503).body(Map.of("message", "Service unavailable"));

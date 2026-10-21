@@ -21,6 +21,9 @@ spring:
 
 server:
   shutdown: graceful
+  tomcat:
+    threads:
+      max: ${SERVER_MAX_THREADS:200}   # in-flight requests per instance (most time is spent waiting on the provider)
 
 security:
   api-keys: ${SECURITY_API_KEYS:}   # comma separated; the app refuses to start if empty
@@ -45,6 +48,7 @@ provider:
     open-state-duration: ${PROVIDER_CB_OPEN_FOR:10s}
   mock:
     enabled: ${PROVIDER_MOCK_ENABLED:false}
+    latency-ms: ${PROVIDER_MOCK_LATENCY_MS:0}   # simulated provider latency for load tests
 
 management:
   endpoints:

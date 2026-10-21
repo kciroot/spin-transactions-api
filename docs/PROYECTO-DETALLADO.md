@@ -306,6 +306,7 @@ Detalle de capacidad, escalado y backups: [`OPERACION.md`](OPERACION.md). Matriz
 ---
 
 ## 9. Límites conocidos y siguientes pasos
+- **Carga a escala no validada:** el dimensionamiento de millones de transacciones/día es un modelo por cálculo; existe una prueba de carga opcional (`make load`, k6) para medirlo. Ver `OPERACION.md` §7.
 - **Conciliación** de `PENDING`/`FAILED` contra el proveedor: diseñada, no implementada.
 - **Métricas y alertas** (Prometheus), logs estructurados y trazas: no implementadas.
 - El mock **no respeta** `Idempotency-Key`; un proveedor real debería.

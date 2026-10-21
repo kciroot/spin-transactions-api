@@ -28,6 +28,15 @@ services:
       PROVIDER_MOCK_ENABLED: "true"                                  # embedded mock provider
       PROVIDER_BASE_URL: http://localhost:8080
       PROVIDER_RETRY_MAX_ATTEMPTS: ${PROVIDER_RETRY_MAX_ATTEMPTS:-3} # try 1 to turn retries off
+      PROVIDER_MOCK_LATENCY_MS: ${PROVIDER_MOCK_LATENCY_MS:-0}       # e.g. 300 to simulate a real provider under load
+      SERVER_MAX_THREADS: ${SERVER_MAX_THREADS:-200}
+    # Container hardening: read-only root filesystem (only /tmp is writable, in memory), no extra privileges
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "8080:8080"
 

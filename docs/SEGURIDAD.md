@@ -46,3 +46,24 @@ dominio, porque la seguridad vive solo en `infrastructure/security`.
 - [ ] TLS en el ingress; política de red aplicada.
 - [ ] Usuario de BD de mínimo privilegio; backups cifrados.
 - [ ] Rate limiting y autenticación fuerte en el gateway.
+
+## Endurecimiento de contenedores: qué hay y qué no
+
+Pregunta frecuente: *¿las imágenes y contenedores son "solo lectura"?* Respuesta precisa:
+
+| Capa | Estado | Detalle |
+|---|---|---|
+| Capas de la imagen | Inmutables por diseño de Docker | Cada capa es de solo lectura; el contenedor añade una capa escribible encima |
+| Usuario no root | ✅ Dockerfile | Proceso con uid 1001 |
+| **Sistema de archivos raíz de solo lectura** | ✅ Docker Compose (`read_only: true`) y ✅ Kubernetes (`readOnlyRootFilesystem: true`) | Solo `/tmp` es escribible: `tmpfs` en memoria (compose) o `emptyDir` (K8s) |
+| Sin capacidades de Linux | ✅ ambos (`cap_drop: ALL`) | |
+| Sin escalada de privilegios | ✅ ambos (`no-new-privileges` / `allowPrivilegeEscalation: false`) | |
+| `seccomp` por defecto | ✅ Kubernetes (`RuntimeDefault`) | |
+| Escaneo de vulnerabilidades de la imagen | ⏳ `make scan` (Trivy, opcional) | No corre automáticamente |
+| Imagen base mínima / fijada por digest | ⏳ Recomendado | Hoy `eclipse-temurin:17-jre`; endurecer con *distroless* o fijar digest |
+| Base de datos del compose | ❌ No endurecida | PostgreSQL de demo; en producción es un servicio gestionado |
+
+**Alcance real:** un sistema de archivos de solo lectura reduce lo que un atacante puede hacer si logra ejecutar código en el
+contenedor (no puede alterar binarios ni dejar archivos persistentes), pero **no evita el ataque inicial**. Es una capa de
+defensa en profundidad junto con autenticación, validación de entrada, mínimo privilegio, actualización de dependencias y
+aislamiento de red. Ninguna capa por sí sola es "la protección".

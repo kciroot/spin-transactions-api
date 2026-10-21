@@ -99,3 +99,35 @@ Siguiente paso, en orden de valor:
 | `Timeout waiting for connection` | Pool agotado o `max_connections` alcanzado | Revisar `pods × pool` vs `max_connections`; PgBouncer. |
 | Transacciones en `PENDING` viejas | Pod murió a mitad de flujo | Ejecutar conciliación (sección 4). |
 | Pods no arrancan: "No API key configured" | Falta `SECURITY_API_KEYS` | Comportamiento deseado (fail-safe); revisar el Secret. |
+
+## 7. Validación de carga (estado honesto)
+
+**Estado actual: no se ha ejecutado una prueba de carga.** Los números de la sección 1 son un **modelo por cálculo** con
+supuestos explícitos, no mediciones. Lo que sí existe: un test de concurrencia de idempotencia (12 hilos sobre PostgreSQL
+real, `PostgresIT`) y el diseño orientado a volumen. "Diseñado para alto volumen" es correcto; "validado a millones por día"
+**todavía no**, y así debe presentarse hasta tener mediciones.
+
+### Cómo validarlo (opcional, gratis, local)
+```bash
+PROVIDER_MOCK_LATENCY_MS=300 make up          # proveedor simulado con 300 ms de latencia, como en el modelo
+make load PROFILE=avg                          # ~58 tx/s sostenidos (promedio de 5 M/día)
+make load PROFILE=peak                         # rampa a ~580 tx/s (pico de 10x)
+make load PROFILE=peak RATE=300 DURATION=5m    # ajustar a lo que soporte tu máquina
+```
+Script: `scripts/load/k6-transactions.js` (k6 en Docker). Umbrales: errores < 1 %, p95 < 1 s, checks > 99 %.
+
+### Qué comprobar después de cada corrida
+| Comprobación | Cómo | Esperado |
+|---|---|---|
+| Throughput alcanzado y latencia p95/p99 | Resumen de k6 | Cumple los umbrales |
+| Consistencia | `SELECT status, count(*) FROM transactions GROUP BY status;` | Sin `PENDING` huérfanas |
+| Saturación | Hilos de Tomcat (`SERVER_MAX_THREADS`), pool (`DB_POOL_SIZE`), CPU | Sin esperas de conexión |
+| Circuit breaker bajo carga | Repetir con una cuenta `-down` mezclada | Falla rápido, sin colapsar hilos |
+
+### Qué NO demuestra una corrida local
+- Millones por día **sostenidos** (haría falta una prueba de resistencia de horas) ni el comportamiento de la BD tras
+  meses de datos (crecimiento, vacuum, particionado).
+- El rendimiento con un proveedor real, red real, ni la conmutación por falla de la BD.
+- Una laptop con Docker no equivale a producción: reporta siempre hardware, fecha y parámetros junto a los resultados.
+- Ojo con el cuello de botella de hilos: 580 tx/s × 0.3 s ≈ 175 peticiones en vuelo; con `SERVER_MAX_THREADS=200` una sola
+  instancia está al límite. Por eso el diseño contempla varias réplicas.

@@ -14,6 +14,8 @@ Todo lo demás existe, funciona y se puede demostrar, pero **solo se ejecuta si 
 | Idempotencia, reintentos, circuit breaker, API key | Incluido en el núcleo (ON) | siempre; perillas abajo | $0 | — |
 | Test contra PostgreSQL real (Testcontainers) | Núcleo condicional | corre en `make verify` si hay Docker; si no, se omite solo | $0 | Docker |
 | API key aleatoria propia (Docker Compose) | OPCIONAL | `make key` → guarda `SECURITY_API_KEYS` en `.env` (ignorado por git); `make show-key` la muestra | $0 | `openssl` no hace falta |
+| Prueba de carga (k6) | OPCIONAL | `make load PROFILE=avg\|peak` | $0 | Docker |
+| Escaneo de vulnerabilidades de la imagen | OPCIONAL | `make scan` (requiere `make docker-build`) | $0 | Docker |
 | Backup lógico verificado | OPCIONAL | `make backup` (tras `make up`) | $0 | Docker |
 | Restore drill (a una BD aparte, no toca la original) | OPCIONAL | `make restore FILE=backups/….dump` | $0 | Docker |
 | Kubernetes local (núcleo) | OPCIONAL | `make k8s-local` | $0 (local) | Docker, kind, kubectl |
@@ -35,6 +37,8 @@ Sirven para demostrar el valor de cada mecanismo apagándolo y viendo qué pasa.
 | `PROVIDER_READ_TIMEOUT` | `2s` | Súbela a `10s` y el escenario `-slow` ya no hace timeout. |
 | `PROVIDER_CB_WINDOW` / `PROVIDER_CB_MIN_CALLS` | `20` / `10` | Súbelas mucho para "apagar" el circuit breaker y compara el tiempo de respuesta con `-down`. |
 | `PROVIDER_CB_OPEN_FOR` | `10s` | Cuánto tarda el breaker en probar de nuevo. |
+| `PROVIDER_MOCK_LATENCY_MS` | `0` | Simula la latencia del proveedor (p. ej. `300`) para pruebas de carga realistas. |
+| `SERVER_MAX_THREADS` | `200` | Peticiones en vuelo por instancia. |
 | `SPRINGDOC_ENABLED` | `true` | `false` en producción: oculta Swagger. |
 | `SECURITY_API_KEYS` | (obligatoria) | Varias separadas por coma = rotación sin downtime. |
 | `DB_POOL_SIZE` | `20` | Dimensionar contra `max_connections`. |

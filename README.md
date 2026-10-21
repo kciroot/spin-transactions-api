@@ -49,6 +49,7 @@ curl -H 'X-API-Key: local-dev-key' 'localhost:8080/transactions?accountId=acc-12
 | **Núcleo** | API completa, reglas, proveedor mock, persistencia, idempotencia, resiliencia, API key, tests, demo, Docker Compose | `make run` / `make up` | $0 |
 | Opcional | Backups verificados y restore | `make backup` · `make restore FILE=…` | $0 |
 | Opcional | Kubernetes local (kind): núcleo, o con autoescalado + PDB + NetworkPolicy + CronJob | `make k8s-local` · `make k8s-local-full` | $0 |
+| Opcional | Prueba de carga (k6) y escaneo de imagen (Trivy) | `make load` · `make scan` | $0 |
 | Opcional | CI y Dependabot | automático en GitHub | $0 |
 | Opcional (no ejecutado) | Despliegue en nube real | `deploy/k8s/overlays/prod-example` (ejemplo) | variable |
 
@@ -198,6 +199,9 @@ Makefile · Dockerfile · docker-compose.yml · .github/
 | [`presentacion/`](presentacion/) | Presentación, guía paso a paso y Postman |
 
 ## 13. Límites y siguientes pasos
+**Carga:** el dimensionamiento a millones de transacciones/día es un modelo por cálculo, **aún no medido**; hay una prueba de
+carga opcional (`make load`, k6) para validarlo ([`docs/OPERACION.md` §7](docs/OPERACION.md)).
+
 Diseñado pero no implementado: conciliación de `PENDING`/`FAILED`, métricas y alertas, `client_id` para auditoría,
 paginación por cursor y particionado, outbox + Kafka. El mock no respeta `Idempotency-Key` (un proveedor real debería).
 
