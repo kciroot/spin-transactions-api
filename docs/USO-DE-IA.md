@@ -1,65 +1,91 @@
-# Uso de IA: prompts, decisiones, validaciones y pruebas
+# Uso de IA: dirección de ingeniería, decisiones, validación y pruebas
 
-El enunciado permite usar IA y pide documentarlo. Aquí se explica **cómo dirigí a la IA, qué decidí yo, cómo valido
-y pruebo el resultado**, con evidencia verificable.
+El enunciado permite usar IA y pide documentarlo. Este documento muestra **cómo dirigí el trabajo con la IA**: qué requisitos
+no funcionales impuse, qué alternativas contrasté, qué decisiones tomé y cómo valido el resultado, con evidencia verificable.
 
 > **Cómo leer este documento.** Lo escrito como hecho está respaldado por la conversación con la IA o por archivos del
 > repositorio. Los campos `TODO-RICK` son resultados de mi propia ejecución (tiempos, comandos, resultados) que completo
 > **después de correrlos**, con la evidencia que genera `make evidencia`. `make pre-entrega` falla mientras queden pendientes.
 
-## 1. Roles
-| Quién | Qué hizo |
+## 1. Modelo de trabajo: dirección con revisión
+Trabajé como responsable técnico del resultado y usé la IA como ejecutora y asesora:
+
+| Responsabilidad | Quién |
 |---|---|
-| **Yo (Rick)** | Definí el objetivo y el alcance en dos niveles (primero lo necesario, luego el plus), aporté el enunciado, contrasté la propuesta con otra IA, pedí seguridad, crecimiento, backups y documentación, fijé la restricción de costo (K8s y nube **opcionales**), pedí material para presentar y reporté fallos reales de mi entorno para depurar. Valido, pruebo, adapto y presento. |
-| **Claude (IA)** | Propuso la arquitectura, escribió el código, los tests, los manifiestos y la documentación, y verificó parcialmente lo que su entorno permitía (ver sección 5). |
+| Definir objetivo, prioridades, restricciones y criterios de calidad | **Yo** |
+| Delegar la propuesta técnica y **auditarla**: contrastar con otra alternativa y exigir la justificación de cada componente y tecnología | **Yo** |
+| Generar código, tests, manifiestos y documentación según esas restricciones | IA (Claude) |
+| Verificar lo que su entorno permitía y declarar lo que no | IA (Claude) |
+| Ejecutar, depurar en mi entorno, validar con evidencia y defender cada decisión | **Yo** |
 
-## 2. Bitácora de prompts (mis instrucciones, en orden)
-Resumen fiel de lo que pedí en la conversación:
+Importante: **delegué la selección del stack a la IA y la audité** (contraste con otro plan, justificación por componente);
+no la elegí yo por adelantado. Mi aporte está en las restricciones, el contraste, la priorización y la validación.
 
-| # | Mi instrucción | Qué buscaba / decidí | Qué entregó la IA |
+## 2. Requisitos no funcionales que impuse
+| Requisito | Origen | Cómo se atendió | Dónde verificarlo |
 |---|---|---|---|
-| 1 | Subí el PDF del reto: "vamos a dar solución... primero cubramos lo necesario y después el plus... vamos a brillar" | Alcance en dos niveles y repositorio Git | Diseño, proyecto Java/Spring, dominio y servicio con 18 tests, infraestructura y API |
-| 2 | "Continuar" (dos veces) | Aprobar el avance de la construcción por partes | Capas siguientes del proyecto, README inicial |
-| 3 | "Comparemos vs lo que me dejó Gemini" + plan de Gemini | **No adoptar una sola propuesta sin contrastarla** | Comparativa; recomendó mantener su diseño y sumar Testcontainers |
-| 4 | "Sí, y no olvidemos la seguridad, el crecimiento transparente, backups y demás... generar la doc para presentarlo y el porqué de cada componente, y para mí tener el 100 % dominado" | Ampliar a seguridad, escalado, backups, documentación y dominio del código | API key, Testcontainers, Kubernetes, backups, CI, docs y guía de estudio |
-| 5 | "Para poder probar... si necesitamos k8 o alguna nube con costo, dejarlos como opcionales... escribe dentro de la carpeta la solución... pasos para presentarlo... plus con control de poder realizarlo o no... uso de IA, tiempos, codificación y lo que yo haré" | **Restricción de costo** y control de lo avanzado | Makefile, componentes Kustomize opt-in, perfil de compose, presentación, guía paso a paso, este documento |
-| 6 | "¿Dónde obtengo la key?" (dos veces) | Entender cómo usar la autenticación | Explicación de la API key y cómo generarla |
-| 7 | "Dame un JSON para importar a Postman... para todas las APIs... demo visible para el team" | Demo visual para el equipo | Colección Postman (37 requests con tests) y 3 environments |
-| 8 | Pegué el log de arranque: "Me genera unauthorized" | **Depuración con evidencia real de mi entorno** | Diagnóstico (key no coincidente), eliminación de un aviso innecesario, log de keys cargadas |
-| 9 | "¿Se puede generar desde docker compose? ¿Cuál es la arquitectura?" | Generar la key sin fricción y entender el diseño | `make key` / `make show-key` y explicación de la arquitectura |
-| 10 | "Dame un archivo detallado de todo... README más claro... apartado de IA con prompts, validaciones, testing" | Material claro para presentar | `PROYECTO-DETALLADO.md`, README reescrito, este documento, `make evidencia` |
+| **Calidad de código** (limpio, capas, testing, pragmatismo) | Criterios del enunciado que aporté | Hexagonal, dominio sin framework, 43 tests, núcleo mínimo y opcionales aislados | `docs/ARQUITECTURA.md`, `docs/PROYECTO-DETALLADO.md` §6 |
+| **Escalabilidad / alto volumen** | Enunciado ("millones de transacciones diarias") y mi pedido de "crecimiento transparente" | Servicio sin estado, idempotencia en la BD, sin retener conexiones durante la llamada externa, autoescalado opcional, dimensionamiento con números | `docs/OPERACION.md` |
+| **Seguridad** | Mi pedido explícito de no olvidar la seguridad | API key en tiempo constante, deny-by-default, fail-safe, validación estricta, contenedor endurecido, Dependabot | `docs/SEGURIDAD.md` |
+| **Recuperación y respaldo** | Mi pedido explícito de backups | Estrategia en 3 capas, scripts verificados, restore a BD aparte, CronJob opcional | `docs/OPERACION.md` §3 |
+| **Resiliencia ante el proveedor** | Enunciado (plus) | Timeouts, reintentos con backoff, circuit breaker, separación rechazo/caída | `docs/PROYECTO-DETALLADO.md` §5.5 |
+| **Control de costo** | Mi restricción: K8s y nube **opcionales** | Núcleo gratis; opcionales por comando; nube solo como ejemplo | `docs/OPCIONALES.md` |
+| **Explicabilidad** | Mi pedido de "el porqué de cada componente" y de dominar el proyecto | Tabla de alternativas descartadas, guía de estudio, presentación | `docs/ARQUITECTURA.md`, `presentacion/` |
+| **Operabilidad y demo** | Mi pedido de material para presentar y de demo visible para el equipo | Makefile, colección Postman con tests, guion paso a paso | `presentacion/` |
 
-## 3. Cómo dirigí a la IA (patrones que usé)
-1. **Alcance por niveles:** "lo necesario primero, el plus después" → núcleo funcional antes de las capas avanzadas.
-2. **Contraste:** pedir comparar contra el plan de otra IA antes de comprometerme.
-3. **Pedir el porqué:** cada componente debía venir con su justificación y alternativa descartada.
-4. **Restricción explícita:** costo y nube opcionales → todo lo avanzado es opt-in y controlable.
-5. **Pedir material para defender:** presentación, guion, preguntas probables, ejercicios.
-6. **Aportar evidencia real al depurar:** logs de mi propia ejecución en lugar de describir el problema.
+## 3. Bitácora de dirección (mis instrucciones, en orden)
+Resumen fiel de lo que pedí, con la intención de ingeniería detrás de cada una:
 
-## 4. Decisiones que tomé yo
+| # | Mi instrucción | Intención de ingeniería | Qué entregó la IA |
+|---|---|---|---|
+| 1 | Subí el PDF: "vamos a dar solución... primero cubramos lo necesario y después el plus" | **Priorización**: núcleo verificable antes de las capas avanzadas | Diseño, proyecto Java/Spring, dominio y servicio con 18 tests |
+| 2 | "Continuar" (dos veces) | Avanzar por entregas parciales, revisando cada una | Infraestructura, API y README inicial |
+| 3 | "Comparemos vs lo que me dejó Gemini" + su plan | **Evaluación comparativa**: no comprometerme con una sola propuesta | Comparativa; se mantuvo el diseño y se sumó Testcontainers |
+| 4 | "Sí, y no olvidemos la seguridad, el crecimiento transparente, backups y demás... el porqué de cada componente... tener el 100 % dominado" | **Requisitos no funcionales** (seguridad, escalamiento, recuperación) y **explicabilidad** | API key, Testcontainers, Kubernetes, backups, CI, docs y guía de estudio |
+| 5 | "Si necesitamos k8 o nube con costo, dejarlos como opcionales... plus con control de poder realizarlo o no... uso de IA, tiempos, codificación" | **Restricción de costo** y control de lo avanzado | Makefile, componentes Kustomize opt-in, perfil de compose, presentación, guía paso a paso |
+| 6 | "¿Dónde obtengo la key?" (dos veces) | **Prueba de usabilidad** del flujo de autenticación | Explicación y `make key` |
+| 7 | "JSON para importar a Postman... todas las APIs... demo visible para el team" | Demo reproducible para el equipo | Colección Postman (37 requests con tests) y 3 environments |
+| 8 | Pegué el log de arranque: "me genera unauthorized" | **Depuración con evidencia real** de mi entorno | Diagnóstico (key no coincidente), quitar un aviso innecesario, log de keys cargadas |
+| 9 | "¿Se puede generar desde docker compose? ¿Cuál es la arquitectura?" | Reducir fricción y **verificar mi comprensión** del diseño | `make key` / `make show-key` y explicación |
+| 10 | "Archivo detallado de todo, README más claro, el porqué de cada tecnología, prompts, validaciones y testing" | Material claro y defendible | `PROYECTO-DETALLADO.md`, README, este documento, `make evidencia` |
+
+**Patrones de dirección que usé:** priorizar por niveles; contrastar antes de decidir; exigir el porqué de cada componente;
+fijar restricciones (costo); pedir material para defender; aportar evidencia real al depurar.
+
+## 4. Decisiones de ingeniería
 | Decisión | Contexto | Resultado |
 |---|---|---|
-| Contrastar con otro plan antes de seguir | Había dos propuestas | Mantener la arquitectura propuesta y sumar Testcontainers; descartar mapear toda falla del proveedor a `REJECTED` |
-| Incluir seguridad, crecimiento y backups | Pedí "lo demás" además del reto | Implementado; lo no implementable aquí quedó documentado |
+| Contrastar con otro plan antes de seguir | Había dos propuestas | Mantener la arquitectura y sumar Testcontainers; descartar mapear toda falla del proveedor a `REJECTED` |
+| Exigir seguridad, escalamiento y backups además del reto | Entorno fintech de alto volumen | Implementado, y documentado lo que corresponde a la plataforma |
 | Kubernetes y nube **opcionales** | Costo y complejidad para evaluar | `make k8s-local` gratis con kind; nube real solo como ejemplo |
-| Demo en Postman para el equipo | Presentación visible | Colección + environments por modo de ejecución |
-| Lenguaje y stack (Java/Spring Boot) | La IA lo propuso; lo acepté | TODO-RICK (mi razón: p. ej. dominio previo del stack, coincide con el de Spin) |
-| Postura sobre 201 en `REJECTED` y orden `PENDING` | Se desvía del enunciado | TODO-RICK (mi opinión tras revisarlo; plantearla como pregunta al equipo) |
+| Demo en Postman para el equipo | Presentación visible | Colección + environments por modo |
+| Aceptar Java/Spring Boot propuesto por la IA | Delegué la selección y la audité | TODO-RICK (mi razón: p. ej. coincide con el stack de Spin y lo conozco) |
+| Postura sobre 201 en `REJECTED` y el orden `PENDING` | Se desvían del enunciado | TODO-RICK (mi opinión tras revisarlo; plantearla como pregunta al equipo) |
 
-## 5. Validación: qué se verificó y qué verifico yo
+## 5. Revisiones adicionales con IA (plan de calidad)
+Revisiones que ejecuto con la IA sobre el código ya generado, para endurecerlo antes de entregar. Los prompts están en
+[`PROMPTS-DE-REVISION.md`](PROMPTS-DE-REVISION.md). Cada fila se completa **solo después de ejecutarla**.
 
-### 5.1 Verificado por la IA antes de entregarme el código
+| Revisión | Enfoque | Estado | Hallazgos y acción tomada |
+|---|---|---|---|
+| Seguridad | Amenazas, autenticación, validación, secretos, contenedor | TODO-RICK (pendiente de ejecutar) | TODO-RICK |
+| Escalabilidad | Cuellos de botella, pool, concurrencia, crecimiento de datos | TODO-RICK (pendiente de ejecutar) | TODO-RICK |
+| Calidad de código | Legibilidad, responsabilidades, naming, deuda técnica | TODO-RICK (pendiente de ejecutar) | TODO-RICK |
+| Brechas de testing | Casos no cubiertos, pruebas que no pueden fallar | TODO-RICK (pendiente de ejecutar) | TODO-RICK |
+
+## 6. Validación: qué se verificó y qué verifico yo
+
+### 6.1 Verificado por la IA antes de entregarme el código
 - Dominio y aplicación **compilados y ejecutados**: 18 tests en verde (arnés JDK, sin Spring).
 - Sintaxis válida de YAML (compose, Kubernetes, CI), JSON (Postman) y scripts Bash; el `Makefile` se interpreta correctamente.
 - La lógica de `make key` probada en una carpeta temporal (genera, no sobrescribe).
 - El HTML de la presentación está bien formado.
 
-### 5.2 **No** verificado por la IA (lo confirmo yo)
+### 6.2 **No** verificado por la IA (lo confirmo yo)
 Compilación y ejecución de Spring/JPA/seguridad, adaptador HTTP, Resilience4j, tests de integración, Docker, Kubernetes y
 Postman. Declararlo evita presentar como probado lo que no lo está.
 
-### 5.3 Mi validación (evidencia que genero yo)
+### 6.3 Mi validación (evidencia que genero yo)
 `make evidencia` guarda en `./evidencias/`: fecha (UTC), log y código de salida de `mvn verify`, log de la demo y commits.
 
 | # | Validación | Cómo | Resultado esperado | Evidencia | Mi resultado |
@@ -73,7 +99,7 @@ Postman. Declararlo evita presentar como probado lo que no lo está.
 | 7 | Opcional: backup/restore | `make backup` y `make restore FILE=...` | `.dump` creado y conteo por estado tras restaurar | Salida de consola | TODO-RICK (o "no demostrado") |
 | 8 | Opcional: Kubernetes local | `make k8s-local-full` | `rollout status` OK; HPA/PDB/CronJob creados | `kubectl get ...` | TODO-RICK (o "no demostrado") |
 
-## 6. Testing: qué existe y qué cubre
+## 7. Testing: qué existe y qué cubre
 Detalle completo por clase en [`PROYECTO-DETALLADO.md` §6](PROYECTO-DETALLADO.md). Resumen:
 
 | Nivel | Clase | Tests | Estado |
@@ -86,7 +112,7 @@ Detalle completo por clase en [`PROYECTO-DETALLADO.md` §6](PROYECTO-DETALLADO.m
 | PostgreSQL real | `PostgresIT` | 2 | Por confirmar (requiere Docker) |
 | Demo | `make demo` / Postman (37 requests) | 8 / 37 | Por confirmar |
 
-## 7. Tiempos
+## 8. Tiempos
 La columna "sin IA" es una **estimación orientativa** de esfuerzo manual para un ingeniero con experiencia (no un dato
 medido). La columna "real" es mi tiempo efectivo.
 
@@ -104,7 +130,7 @@ medido). La columna "real" es mi tiempo efectivo.
 La IA elimina la escritura repetitiva (DTOs, configuración, boilerplate, manifiestos) y acelera explorar alternativas; no
 elimina la revisión, la depuración ni la comprensión. TODO-RICK (una frase con mi experiencia real: dónde tardé más y qué corregí).
 
-## 8. Cómo se codificó (orden y por qué)
+## 9. Cómo se codificó (orden y por qué)
 1. Dominio y aplicación sin framework (el riesgo de negocio) y verificados de forma aislada.
 2. Infraestructura detrás de interfaces.
 3. API y seguridad, que dependen de los códigos de error del dominio.
@@ -112,7 +138,7 @@ elimina la revisión, la depuración ni la comprensión. TODO-RICK (una frase co
 5. Operación (Docker, K8s, backups, CI) como capas opcionales sobre un núcleo que ya funcionaba.
 6. Documentación y presentación al final, con las decisiones ya tomadas.
 
-## 9. Riesgos de usar IA y mitigaciones
+## 10. Riesgos de usar IA y mitigaciones
 | Riesgo | Mitigación |
 |---|---|
 | Código que no compila o API inexistente | `make verify` y `make evidencia` en mi máquina; errores corregidos y documentados |
@@ -122,7 +148,7 @@ elimina la revisión, la depuración ni la comprensión. TODO-RICK (una frase co
 | Sobre-ingeniería | Lo opcional está aislado y apagado por defecto |
 | Seguridad (secretos, dependencias) | Sin secretos en el repo, `.env` ignorado, fail-safe sin API key, Dependabot |
 
-## 10. Lo que hago yo antes de presentar
+## 11. Lo que hago yo antes de presentar
 - [ ] Correr `make evidencia` y revisar que `verify.exitcode` sea `0` (TODO-RICK)
 - [ ] Correr `make demo` y la colección de Postman, y entender cada escenario (TODO-RICK)
 - [ ] Hacer el ejercicio de mutación y al menos 4 ejercicios de la guía de estudio (TODO-RICK)
@@ -130,8 +156,8 @@ elimina la revisión, la depuración ni la comprensión. TODO-RICK (una frase co
 - [ ] Probar los opcionales que voy a mostrar (cuáles: TODO-RICK)
 - [ ] Ensayar la presentación en voz alta y las preguntas frecuentes (TODO-RICK)
 
-## 11. Declaración (para el README)
-Usar esta frase **solo después** de haber ejecutado y validado (sección 5.3). TODO-RICK: confirmar que es verdad y quitar esta nota.
+## 12. Declaración (para el README)
+Usar esta frase **solo después** de haber ejecutado y validado (sección 6.3). TODO-RICK: confirmar que es verdad y quitar esta nota.
 
 > Usé Claude como asistente de ingeniería: yo definí el alcance y las restricciones (núcleo primero, plus opcional, sin
 > costo de nube), contrasté su propuesta con el plan de otra IA y dirigí cada fase mediante prompts. La IA generó código,

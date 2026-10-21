@@ -202,11 +202,13 @@ Diseñado pero no implementado: conciliación de `PENDING`/`FAILED`, métricas y
 paginación por cursor y particionado, outbox + Kafka. El mock no respeta `Idempotency-Key` (un proveedor real debería).
 
 ## 14. Uso de IA
-Usé Claude como asistente de ingeniería. **Yo definí el alcance y las restricciones** (núcleo primero, plus opcional, sin
-costo de nube), **contrasté su propuesta con el plan de otra IA** y **dirigí cada fase con prompts**; la IA generó código,
-tests, manifiestos y documentación. **Validé el resultado** con la suite de tests, la demo y la colección de Postman, y
-guardé la evidencia en `evidencias/`.
+Usé Claude como asistente de ingeniería bajo un modelo de **dirección con revisión**. Definí la priorización (núcleo primero,
+plus opcional), impuse requisitos no funcionales (**seguridad, escalamiento, recuperación, control de costo, explicabilidad**),
+**contrasté su propuesta con el plan de otra IA** y exigí la justificación de cada componente y tecnología. La IA generó código,
+tests, manifiestos y documentación; **yo ejecuto y valido el resultado** (suite de tests, demo y colección de Postman) y guardo
+la evidencia en `evidencias/`.
 
-- Bitácora de prompts, decisiones, validaciones y pruebas: [`docs/USO-DE-IA.md`](docs/USO-DE-IA.md)
+- Requisitos impuestos, bitácora de dirección, decisiones, validación y pruebas: [`docs/USO-DE-IA.md`](docs/USO-DE-IA.md)
+- Revisiones adicionales de seguridad, escalabilidad y calidad: [`docs/PROMPTS-DE-REVISION.md`](docs/PROMPTS-DE-REVISION.md)
 - Tiempo real invertido: TODO-RICK horas (detalle por fase en el documento anterior).
 - Lo que verifiqué personalmente: TODO-RICK (resumen de una línea basado en `evidencias/`).
