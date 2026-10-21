@@ -9,7 +9,7 @@ CLUSTER ?= spin-local
 IMAGE   ?= transactions-api:1.0.0
 FILE    ?=
 
-.PHONY: help run test verify docker-build up down demo key show-key up-backup backup restore k8s-local k8s-local-full k8s-down pre-entrega
+.PHONY: help run test verify evidencia docker-build up down demo key show-key up-backup backup restore k8s-local k8s-local-full k8s-down pre-entrega
 
 help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -23,6 +23,14 @@ test: ## [NUCLEO] Tests unitarios + integracion (Testcontainers se omite si no h
 
 verify: ## [NUCLEO] Build completo con todos los tests
 	mvn -B verify
+
+evidencia: ## Genera evidencias REALES de tu ejecucion (tests + demo) en ./evidencias para respaldar tu validacion
+	@mkdir -p evidencias
+	@date -u +%Y-%m-%dT%H:%M:%SZ > evidencias/fecha-utc.txt
+	@(git log --oneline > evidencias/commits.txt 2>/dev/null || true)
+	@bash -c 'mvn -B verify > evidencias/verify.log 2>&1; echo $$? > evidencias/verify.exitcode; tail -n 25 evidencias/verify.log; echo "mvn verify exit code: $$(cat evidencias/verify.exitcode)  (0 = todo en verde)"'
+	@bash -c 'if curl -sf $${BASE_URL:-http://localhost:8080}/actuator/health/readiness >/dev/null; then ./scripts/demo.sh > evidencias/demo.log 2>&1; echo "Demo guardada en evidencias/demo.log"; else echo "La app no esta corriendo: levanta make run o make up y repite para guardar la demo"; fi'
+	@echo "Evidencias en ./evidencias (citalas en docs/USO-DE-IA.md)"
 
 docker-build: ## [NUCLEO] Construye la imagen Docker
 	docker build -t $(IMAGE) .
