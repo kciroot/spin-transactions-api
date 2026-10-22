@@ -33,7 +33,7 @@ Estados: ✅ implementado · 🧪 implementado y con test escrito, **pendiente d
 | Paso 3: llamar al proveedor | ✅ | `ProviderGateway` | `TransactionService.callProvider` |
 | Paso 4: persistir con resultado y saldo | ✅ | `executed(...)`/`rejected(...)`/`failed(...)` | `TransactionServiceTest.approvedProviderResponseIsPersistedAsExecutedWithBalance` ✅ |
 | Paso 5: retornar la transacción con estado | ✅ | `TransactionResponse` | `executedTransactionReturns201WithProviderData` 🧪 |
-| Response: id, …, status, providerTransactionId, balanceAfter, createdAt | ✅ | Idéntico al ejemplo del PDF (+ `providerCode`/`providerMessage` si hubo rechazo) | `TransactionResponse` |
+| Response: id, …, status, providerTransactionId, balanceAfter, createdAt | ✅ | Idéntico al ejemplo del PDF (+ `errorCode`/`errorMessage` si hubo rechazo o caída) | `TransactionResponse` |
 | Orden persistir/proveedor | ⚠️ | Se guarda `PENDING` **antes** de llamar al proveedor y se actualiza después | Si el proceso muere tras mover dinero, no se pierde la operación. Documentado en README §6 |
 
 ### A3. `GET /transactions`
@@ -131,7 +131,7 @@ por error en `src/test`.
 | `docs/PROMPTS-DE-REVISION.md` | Mantener solo si **ejecutas** las revisiones | Sin evidencia de ejecución es un documento vacío de valor; si no vas a correrlos, bórralo y quita su enlace del README §14 |
 | `docs/PROYECTO-DETALLADO.md` vs `ARQUITECTURA.md` vs `OPERACION.md` | Solapamiento parcial | `PROYECTO-DETALLADO` es el recorrido completo; las otras dos profundizan. Aceptable, pero si el repo debe verse más ligero, deja `README` + `ARQUITECTURA` + `SEGURIDAD` + `USO-DE-IA` |
 | `presentacion/index.html`, `GUIA-PASO-A-PASO.md` | Mantener | Sirven para la demo, no para el código |
-| `TODO-RICK` (4 archivos) | **Debe resolverse antes de entregar** | `README.md`, `docs/USO-DE-IA.md`, `presentacion/index.html`, `Makefile` |
+| `TODO-RICK` (3 archivos; `make pre-entrega` falla mientras existan) | **Debe resolverse antes de entregar** | `README.md`, `docs/USO-DE-IA.md`, `presentacion/index.html` |
 
 **Regla de pragmatismo:** el núcleo (sección A) arranca con `make run` sin Docker, sin nube y sin costo. Nada de la sección B
 es necesario para que funcione.
