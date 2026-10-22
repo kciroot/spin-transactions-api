@@ -4,7 +4,7 @@ Este documento explica **todo** lo construido: en qué orden, con qué tecnolog�
 cómo se comporta el sistema en cada situación y cómo se prueba. Para el resumen rápido ver el [README](../README.md);
 para el razonamiento de diseño ver [ARQUITECTURA](ARQUITECTURA.md).
 
-> **Estado de verificación (honesto):** el dominio y la capa de aplicación (18 tests) se ejecutaron y pasaron.
+> **Estado de verificación (honesto):** el dominio y la capa de aplicación (19 tests) se ejecutaron y pasaron.
 > El resto (Spring, JPA, seguridad, adaptador HTTP, Resilience4j, tests de integración, Docker, Kubernetes) está
 > escrito y revisado pero se confirma con `make verify` / `make evidencia` en la máquina de quien lo entrega.
 > El arranque local de la aplicación (Flyway + JPA) ya se observó en un log real.
@@ -31,7 +31,7 @@ separar un rechazo (definitivo) de una caída (ambigua).
 | 0 | Análisis del enunciado | Entender requisitos y criterios de evaluación | Lista de requisitos, riesgos (alto volumen, dinero) y alcance en dos niveles: **núcleo** y **plus** | Revisión contra el PDF |
 | 0b | Contraste con otro plan | No adoptar una sola propuesta sin comparar | Comparativa con un plan de otra IA: se adoptó la idea de Testcontainers y se descartó mapear toda falla a `REJECTED` | Tabla en `docs/USO-DE-IA.md` |
 | 1 | Diseño | Definir arquitectura, estados y flujo | Hexagonal; estados `PENDING/EXECUTED/REJECTED/FAILED`; idempotencia; política de resiliencia | `docs/ARQUITECTURA.md` |
-| 2 | Dominio y aplicación | Reglas y flujo sin framework | `Transaction`, `TransactionRules`, puertos, `TransactionService` | **18 tests ejecutados y en verde** |
+| 2 | Dominio y aplicación | Reglas y flujo sin framework | `Transaction`, `TransactionRules`, puertos, `TransactionService` | **19 tests ejecutados y en verde** |
 | 3 | Infraestructura | Persistencia y proveedor | Adaptador JPA + Flyway; cliente HTTP; Retry + CircuitBreaker; mock del proveedor | Tests de adaptador y resiliencia (a confirmar con `make verify`) |
 | 4 | API | Contrato HTTP | Controller, DTOs, códigos de estado, errores RFC 7807 | Tests MockMvc |
 | 5 | Seguridad | Proteger la API | API key en tiempo constante, deny-by-default, fail-safe, contenedor endurecido | Tests 401 + revisión |
@@ -255,12 +255,12 @@ Se elige por el sufijo del `accountId`: normal (aprueba; cada cuenta inicia en 4
 
 ## 6. Pruebas
 
-Total: **43 tests**. Estado: los 18 del núcleo se ejecutaron y pasaron; el resto se confirma con `make verify`.
+Total: **44 tests**. Estado: los 18 del núcleo se ejecutaron y pasaron; el resto se confirma con `make verify`.
 
 | Clase | Tests | Qué prueba | Cómo |
 |---|---|---|---|
 | `TransactionRulesTest` | 8 | Límites exactos (1.00, 10,000.00), crédito sin tope, moneda, decimales | JUnit puro |
-| `TransactionServiceTest` | 10 | Aprobada, rechazada, caída, reglas sin tocar proveedor ni BD, normalización de moneda, idempotencia (replay, conflicto, carrera), id reenviado al proveedor, `getById` inexistente | Fakes hechos a mano (sin Mockito) |
+| `TransactionServiceTest` | 11 | Aprobada, rechazada, caída, error inesperado (nunca queda `PENDING`), reglas sin tocar proveedor ni BD, normalización de moneda, idempotencia (replay, conflicto, carrera), id reenviado al proveedor, `getById` inexistente | Fakes hechos a mano (sin Mockito) |
 | `HttpProviderGatewayTest` | 7 | Cada fila de la traducción de respuestas, header `Idempotency-Key`, error de red | `MockRestServiceServer` |
 | `ResilientProviderGatewayTest` | 4 | Reintenta hasta éxito, se rinde tras el máximo, no reintenta rechazos, circuito abierto falla sin llamar | Resilience4j real + fake |
 | `TransactionControllerIT` | 12 | 201/502/422/400, validación por campo, idempotencia, filtros y paginación, 404, 401 (sin key y key incorrecta), health público | `@SpringBootTest` + MockMvc + H2, proveedor con Mockito |

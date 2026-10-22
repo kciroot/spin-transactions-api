@@ -112,6 +112,9 @@ class TransactionControllerIT {
         postTransaction(account(), "CREDIT", "100.00", "USD", null)
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value("UNSUPPORTED_CURRENCY"));
+        postTransaction(account(), "CREDIT", "100.00", "PESOS", null)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("UNSUPPORTED_CURRENCY"));
 
         verifyNoInteractions(provider);
     }

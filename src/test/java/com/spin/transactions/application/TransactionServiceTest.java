@@ -86,6 +86,20 @@ class TransactionServiceTest {
     }
 
     @Test
+    void unexpectedProviderErrorIsPersistedAsFailedAndNeverLeftPending() {
+        provider.respondWith(r -> {
+            throw new IllegalStateException("boom: internal detail");
+        });
+
+        Transaction tx = service.execute(command(TransactionType.CREDIT, "100.00", "MXN", null)).transaction();
+
+        assertEquals(TransactionStatus.FAILED, tx.status());
+        assertEquals("PROVIDER_ERROR", tx.errorCode());
+        assertTrue(!tx.errorMessage().contains("boom"), "internal details must not leak");
+        assertEquals(TransactionStatus.FAILED, repository.stored.get(tx.id()).status());
+    }
+
+    @Test
     void businessRuleViolationNeverReachesProviderNorDatabase() {
         assertThrows(BusinessRuleViolationException.class,
                 () -> service.execute(command(TransactionType.DEBIT, "10000.01", "MXN", null)));

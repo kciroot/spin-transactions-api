@@ -4,7 +4,7 @@ Matriz punto por punto de `Backend_Challenge.pdf`. Primero **lo que pidió el re
 
 Estados: ✅ implementado · 🧪 implementado y con test escrito, **pendiente de ejecutar en tu máquina** (`make verify`) · ⚠️ desviación consciente (explicada).
 
-> Honestidad sobre la verificación: los tests de dominio y servicio (18) se ejecutaron con un arnés solo-JDK. Los de
+> Honestidad sobre la verificación: los tests de dominio y servicio (19) se ejecutaron con un arnés solo-JDK. Los de
 > Spring (controlador, Postgres/Testcontainers, cliente HTTP, resiliencia) están escritos pero no se ejecutaron en el entorno
 > donde se generó el código. Antes de entregar corre `make verify` y `make evidencia` y guarda el resultado en `evidencias/`.
 
@@ -70,7 +70,7 @@ Estados: ✅ implementado · 🧪 implementado y con test escrito, **pendiente d
 |---|---|---|
 | Lenguaje a elección | ✅ | Java 17 + Spring Boot 3.3 |
 | Persistencia a elección, **justificada en el README** | ✅ | PostgreSQL (H2 en modo PostgreSQL para `local`/tests). Justificación: README §6 y `docs/ARQUITECTURA.md` |
-| Tests unitarios (mínimo) | ✅ / 🧪 | 43 tests: 18 de dominio/servicio ejecutados ✅; 25 más escritos 🧪 |
+| Tests unitarios (mínimo) | ✅ / 🧪 | 44 tests: 19 de dominio/servicio ejecutados ✅; 25 más escritos 🧪 |
 | README con instrucciones para levantar y ejecutar | ✅ | `README.md` §1–2 (`make run`, `make up`) |
 | README con decisiones de diseño | ✅ | `README.md` §6 |
 | Repositorio Git | ✅ | Historial de commits convencionales; `.gitignore` limpio |

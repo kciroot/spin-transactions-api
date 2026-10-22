@@ -141,7 +141,7 @@ Tabla ampliada (qué hace cada una y alternativas): [`docs/PROYECTO-DETALLADO.md
 
 ## 8. Pruebas
 
-**43 tests**: `TransactionRulesTest` (8) · `TransactionServiceTest` (10) · `HttpProviderGatewayTest` (7) ·
+**44 tests**: `TransactionRulesTest` (8) · `TransactionServiceTest` (11) · `HttpProviderGatewayTest` (7) ·
 `ResilientProviderGatewayTest` (4) · `TransactionControllerIT` (12, API completa sobre H2) · `PostgresIT` (2, PostgreSQL real
 con Testcontainers: migración y **12 hilos con la misma `Idempotency-Key` crean una sola transacción**).
 
@@ -205,6 +205,12 @@ carga opcional (`make load`, k6) para validarlo ([`docs/OPERACION.md` §7](docs/
 
 Diseñado pero no implementado: conciliación de `PENDING`/`FAILED`, métricas y alertas, `client_id` para auditoría,
 paginación por cursor y particionado, outbox + Kafka. El mock no respeta `Idempotency-Key` (un proveedor real debería).
+
+Optimizaciones identificadas en la revisión y **no aplicadas a ciegas** (requieren compilar/medir con `make verify` y `make load`):
+1. **Reintento seguro de `FAILED` con la misma `Idempotency-Key`**: hoy la repetición devuelve el `FAILED` guardado; lo ideal es
+   re-llamar al proveedor con el mismo `transactionId` (idempotente) usando un `UPDATE ... WHERE status='FAILED'` como candado.
+2. **Paginación sin `COUNT(*)`**: en páginas llenas se cuenta toda la tabla; a gran volumen conviene `hasNext` (limit+1) o cursor.
+3. **`UPDATE` directo en vez de `merge`**: evita un `SELECT` por transacción (3 sentencias → 2).
 
 ## 14. Uso de IA
 Usé Claude como asistente de ingeniería bajo un modelo de **dirección con revisión**. Definí la priorización (núcleo primero,

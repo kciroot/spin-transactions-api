@@ -24,7 +24,7 @@ no la elegí yo por adelantado. Mi aporte está en las restricciones, el contras
 ## 2. Requisitos no funcionales que impuse
 | Requisito | Origen | Cómo se atendió | Dónde verificarlo |
 |---|---|---|---|
-| **Calidad de código** (limpio, capas, testing, pragmatismo) | Criterios del enunciado que aporté | Hexagonal, dominio sin framework, 43 tests, núcleo mínimo y opcionales aislados | `docs/ARQUITECTURA.md`, `docs/PROYECTO-DETALLADO.md` §6 |
+| **Calidad de código** (limpio, capas, testing, pragmatismo) | Criterios del enunciado que aporté | Hexagonal, dominio sin framework, 44 tests, núcleo mínimo y opcionales aislados | `docs/ARQUITECTURA.md`, `docs/PROYECTO-DETALLADO.md` §6 |
 | **Escalabilidad / alto volumen** | Enunciado ("millones de transacciones diarias") y mi pedido de "crecimiento transparente" | Servicio sin estado, idempotencia en la BD, sin retener conexiones durante la llamada externa, autoescalado opcional, dimensionamiento con números | `docs/OPERACION.md` |
 | **Seguridad** | Mi pedido explícito de no olvidar la seguridad | API key en tiempo constante, deny-by-default, fail-safe, validación estricta, contenedor endurecido, Dependabot | `docs/SEGURIDAD.md` |
 | **Recuperación y respaldo** | Mi pedido explícito de backups | Estrategia en 3 capas, scripts verificados, restore a BD aparte, CronJob opcional | `docs/OPERACION.md` §3 |
@@ -76,7 +76,7 @@ Revisiones que ejecuto con la IA sobre el código ya generado, para endurecerlo 
 ## 6. Validación: qué se verificó y qué verifico yo
 
 ### 6.1 Verificado por la IA antes de entregarme el código
-- Dominio y aplicación **compilados y ejecutados**: 18 tests en verde (arnés JDK, sin Spring).
+- Dominio y aplicación **compilados y ejecutados**: 19 tests en verde (arnés JDK, sin Spring).
 - Sintaxis válida de YAML (compose, Kubernetes, CI), JSON (Postman) y scripts Bash; el `Makefile` se interpreta correctamente.
 - La lógica de `make key` probada en una carpeta temporal (genera, no sobrescribe).
 - El HTML de la presentación está bien formado.

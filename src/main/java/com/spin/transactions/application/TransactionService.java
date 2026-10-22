@@ -89,6 +89,11 @@ public class TransactionService {
         } catch (ProviderUnavailableException e) {
             log.warn("Provider unavailable for transaction {}: {}", pending.id(), e.getMessage());
             return pending.failed("PROVIDER_UNAVAILABLE", e.getMessage(), now());
+        } catch (RuntimeException e) {
+            // Safety net: never leave the row PENDING because of an unexpected bug/adapter error. The outcome at the
+            // provider is unknown, so it is recorded as FAILED (same meaning as an outage) without leaking details.
+            log.error("Unexpected error calling provider for transaction {}", pending.id(), e);
+            return pending.failed("PROVIDER_ERROR", "Unexpected error while calling the provider", now());
         }
     }
 
