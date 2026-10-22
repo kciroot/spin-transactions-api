@@ -4,9 +4,9 @@ Matriz punto por punto de `Backend_Challenge.pdf`. Primero **lo que pidió el re
 
 Estados: ✅ implementado · 🧪 implementado y con test escrito, **pendiente de ejecutar en tu máquina** (`make verify`) · ⚠️ desviación consciente (explicada).
 
-> Honestidad sobre la verificación: los tests de dominio y servicio (19) se ejecutaron con un arnés solo-JDK. Los de
-> Spring (controlador, Postgres/Testcontainers, cliente HTTP, resiliencia) están escritos pero no se ejecutaron en el entorno
-> donde se generó el código. Antes de entregar corre `make verify` y `make evidencia` y guarda el resultado en `evidencias/`.
+> Honestidad sobre la verificación (CI de GitHub Actions, 22-oct-2026): compila y pasan **30 de 44 tests** (reglas 8, servicio 11,
+> adaptador HTTP 7, resiliencia 4). Los **14 tests de integración** (`TransactionControllerIT` 12, `PostgresIT` 2) fallan porque el
+> contexto de Spring no arranca; mientras no se resuelva, esos puntos marcados 🧪 siguen **sin verificar**.
 
 ---
 
@@ -17,7 +17,7 @@ Estados: ✅ implementado · 🧪 implementado y con test escrito, **pendiente d
 | # | Requisito del PDF | Estado | Con qué se hizo | Dónde / prueba |
 |---|---|---|---|---|
 | 1 | Recibir solicitudes CREDIT/DEBIT | ✅ | Spring Web + Bean Validation | `api/TransactionController`, `api/dto/CreateTransactionRequest`; `TransactionControllerIT.unknownTransactionTypeReturns400` 🧪 |
-| 2 | Ejecutar contra proveedor externo | ✅ | Puerto `ProviderGateway` + adaptador `RestClient` | `infrastructure/provider/HttpProviderGateway`; `HttpProviderGatewayTest` (7) 🧪 |
+| 2 | Ejecutar contra proveedor externo | ✅ | Puerto `ProviderGateway` + adaptador `RestClient` | `infrastructure/provider/HttpProviderGateway`; `HttpProviderGatewayTest` (7) ✅ (CI) |
 | 3 | Persistir el resultado | ✅ | JPA + Flyway + PostgreSQL | `infrastructure/persistence/*`, `db/migration/V1__create_transactions.sql`; `PostgresIT` 🧪 |
 | 4 | Endpoint de consulta | ✅ | Spring Data + Specifications | `GET /transactions`; `TransactionControllerIT.listSupportsFiltersAndPagination` 🧪 |
 | 5 | Alto volumen / escalabilidad | ✅ (modelo) | Servicio sin estado, sin `@Transactional` alrededor del HTTP, índices, pool acotado, N réplicas | `docs/OPERACION.md` §capacidad. **Calculado, no medido**; `make load` (k6) para medirlo |
@@ -70,7 +70,7 @@ Estados: ✅ implementado · 🧪 implementado y con test escrito, **pendiente d
 |---|---|---|
 | Lenguaje a elección | ✅ | Java 17 + Spring Boot 3.3 |
 | Persistencia a elección, **justificada en el README** | ✅ | PostgreSQL (H2 en modo PostgreSQL para `local`/tests). Justificación: README §6 y `docs/ARQUITECTURA.md` |
-| Tests unitarios (mínimo) | ✅ / 🧪 | 44 tests: 19 de dominio/servicio ejecutados ✅; 25 más escritos 🧪 |
+| Tests unitarios (mínimo) | ✅ | 44 tests: **30 ejecutados y en verde en CI** (reglas, servicio, adaptador HTTP, resiliencia); 14 de integración 🧪 pendientes de arreglar el arranque del contexto |
 | README con instrucciones para levantar y ejecutar | ✅ | `README.md` §1–2 (`make run`, `make up`) |
 | README con decisiones de diseño | ✅ | `README.md` §6 |
 | Repositorio Git | ✅ | Historial de commits convencionales; `.gitignore` limpio |
