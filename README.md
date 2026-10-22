@@ -190,6 +190,7 @@ Makefile · Dockerfile · docker-compose.yml · .github/
 ## 12. Documentación
 | Documento | Contenido |
 |---|---|
+| [`docs/COBERTURA-REQUISITOS.md`](docs/COBERTURA-REQUISITOS.md) | **Matriz del reto**: cada punto del PDF → qué lo cubre y dónde; separa lo pedido del plus |
 | [`docs/PROYECTO-DETALLADO.md`](docs/PROYECTO-DETALLADO.md) | **Todo por fases**: tecnologías y porqué, qué hace cada componente, comportamiento, pruebas |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Diagramas y razonamiento de diseño |
 | [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md) | Amenazas y controles |

@@ -12,7 +12,6 @@ import com.spin.transactions.domain.TransactionNotFoundException;
 import com.spin.transactions.domain.TransactionQuery;
 import com.spin.transactions.domain.TransactionRepository;
 import com.spin.transactions.domain.TransactionRules;
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
