@@ -7,7 +7,7 @@ COPY src ./src
 RUN mvn -q -B package -DskipTests
 
 # ---- runtime
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 RUN useradd --system --uid 1001 app
 WORKDIR /app
 COPY --from=build /build/target/transactions-api-1.0.0.jar app.jar
