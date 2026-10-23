@@ -1,8 +1,9 @@
 name: ci
 on:
   push:
-    branches: [main]
+    branches: [main, "future*"]
   pull_request:
+  workflow_dispatch:      # boton "Run workflow" en la pestana Actions
 
 jobs:
   build:

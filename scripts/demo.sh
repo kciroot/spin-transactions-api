@@ -3,7 +3,7 @@
 # Usage: BASE_URL=http://localhost:8080 API_KEY=local-dev-key ./scripts/demo.sh   (SLOW=1 adds the timeout scenario)
 set -u
 BASE_URL="${BASE_URL:-http://localhost:8080}"
-API_KEY="${API_KEY:-local-dev-key}"
+API_KEY="${API_KEY:-}"   # empty = auto-detect (see below)
 RUN="${RUN_ID:-$(date +%s)}"
 
 # Fail early and clearly if the API is not reachable (HTTP 000 = curl could not connect at all).
@@ -13,6 +13,21 @@ if ! curl -sS -o /dev/null --max-time 5 "$BASE_URL/actuator/health/readiness"; t
   echo "- Ese comando deja la terminal ocupada: abre una segunda para 'make demo'."
   echo "- Si usas proxy/VPN, prueba: NO_PROXY=localhost,127.0.0.1 make demo"
   exit 1
+fi
+
+# Auto-detect the API key when none is given: make run = local-dev-key, make up = key in .env (make key) or
+# dev-key-change-me, k8s local = local-k8s-key. The first one the API accepts (not 401) wins.
+if [ -z "$API_KEY" ]; then
+  ENV_KEY="$(grep '^SECURITY_API_KEYS=' "$(dirname "$0")/../.env" 2>/dev/null | cut -d= -f2 | cut -d, -f1)"
+  for candidate in $ENV_KEY dev-key-change-me local-dev-key local-k8s-key; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' -H "X-API-Key: $candidate" "$BASE_URL/transactions?limit=1&page=1")
+    if [ "$code" != "401" ]; then API_KEY="$candidate"; break; fi
+  done
+  if [ -z "$API_KEY" ]; then
+    printf '\n\033[1;31mNinguna API key conocida fue aceptada.\033[0m Pasa la tuya: API_KEY=<key> make demo\n'
+    exit 1
+  fi
+  printf '\033[2mAPI key detectada: %s...\033[0m\n' "${API_KEY:0:6}"
 fi
 
 step() { printf '\n\033[1;36m== %s\033[0m\n' "$1"; }

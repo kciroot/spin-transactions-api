@@ -50,7 +50,7 @@ docker-build: ## [NUCLEO] Construye la imagen Docker
 
 up: ## [NUCLEO] Docker Compose: PostgreSQL + API (http://localhost:8080)
 	docker compose up --build -d
-	@echo "API: http://localhost:8080  |  Swagger: http://localhost:8080/swagger-ui.html  |  API key: dev-key-change-me"
+	@echo "API: http://localhost:8080  |  Swagger: http://localhost:8080/swagger-ui.html  |  API key: $$($(MAKE) -s show-key)"
 
 down: ## [NUCLEO] Detiene Docker Compose
 	docker compose --profile backup down
