@@ -3,9 +3,24 @@ updates:
   - package-ecosystem: maven
     directory: "/"
     schedule: { interval: weekly }
+    ignore:
+      # Saltos mayores requieren migracion manual (springdoc 3.x exige Spring Boot 4 y rompe el contexto en Boot 3)
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springdoc:*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      maven-minor-patch:
+        update-types: ["minor", "patch"]
   - package-ecosystem: docker
     directory: "/"
     schedule: { interval: weekly }
+    ignore:
+      # Mantener Java 17 (alineado con pom.xml y el CI)
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "maven"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule: { interval: weekly }
