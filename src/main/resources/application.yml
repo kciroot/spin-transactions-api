@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: transactions-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/transactions}
+    username: ${DB_USER:transactions}
+    password: ${DB_PASSWORD:transactions}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate        # schema is owned by Flyway
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: ${SERVER_MAX_THREADS:200}   # in-flight requests per instance (most time is spent waiting on the provider)
+
+security:
+  api-keys: ${SECURITY_API_KEYS:}   # comma separated; the app refuses to start if empty
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}    # set to false in production
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
+
+provider:
+  base-url: ${PROVIDER_BASE_URL:http://localhost:8080}
+  connect-timeout: ${PROVIDER_CONNECT_TIMEOUT:1s}
+  read-timeout: ${PROVIDER_READ_TIMEOUT:2s}
+  retry:
+    max-attempts: ${PROVIDER_RETRY_MAX_ATTEMPTS:3}        # 1 = retries off
+    initial-backoff: ${PROVIDER_RETRY_BACKOFF:200ms}
+  circuit-breaker:
+    failure-rate-threshold: ${PROVIDER_CB_FAILURE_RATE:50}
+    sliding-window-size: ${PROVIDER_CB_WINDOW:20}
+    minimum-number-of-calls: ${PROVIDER_CB_MIN_CALLS:10}   # raise this AND the window (e.g. 100000) to effectively disable the breaker
+    open-state-duration: ${PROVIDER_CB_OPEN_FOR:10s}
+  mock:
+    enabled: ${PROVIDER_MOCK_ENABLED:false}
+    latency-ms: ${PROVIDER_MOCK_LATENCY_MS:0}   # simulated provider latency for load tests
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

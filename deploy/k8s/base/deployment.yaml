@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transactions-api
+  namespace: transactions
+  labels: { app: transactions-api }
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }   # never drop capacity during a deploy
+  selector:
+    matchLabels: { app: transactions-api }
+  template:
+    metadata:
+      labels: { app: transactions-api }
+    spec:
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile: { type: RuntimeDefault }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: transactions-api }
+      containers:
+        - name: api
+          image: transactions-api:1.0.0          # replace with your registry/tag
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef: { name: transactions-api }
+            - secretRef: { name: transactions-api }
+          resources:
+            requests: { cpu: 500m, memory: 512Mi }
+            limits: { memory: 768Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "10"] }   # let the endpoint be removed from the Service before SIGTERM
+      volumes:
+        - name: tmp
+          emptyDir: {}

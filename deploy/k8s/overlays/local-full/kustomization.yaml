@@ -1,0 +1,11 @@
+# LOCAL + the optional production-grade extras switched on. Comment out any component you do not want to demo.
+# Notes: the HPA needs metrics-server in the cluster; the NetworkPolicy is only enforced if the CNI supports it
+# (kind's default CNI does not enforce it, it still demonstrates the manifest).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../local
+components:
+  - ../../components/autoscaling
+  - ../../components/network-policy
+  - ../../components/backup

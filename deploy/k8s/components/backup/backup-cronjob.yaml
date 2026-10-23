@@ -1,0 +1,58 @@
+# Logical backup every 6 hours as an EXTRA safety net. In production the primary mechanism should be the
+# managed PostgreSQL's continuous WAL archiving / PITR.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transactions-backups
+  namespace: transactions
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: { storage: 50Gi }
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: transactions-db-backup
+  namespace: transactions
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70            # postgres user in the alpine image
+            fsGroup: 70
+          containers:
+            - name: pg-dump
+              image: postgres:16-alpine
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  f=/backups/transactions_$(date -u +%Y%m%dT%H%M%SZ).dump
+                  pg_dump --format=custom --no-owner --no-privileges --file="$f.partial"
+                  pg_restore --list "$f.partial" > /dev/null
+                  mv "$f.partial" "$f"
+                  find /backups -name 'transactions_*.dump' -mtime +7 -delete
+              env:
+                - name: PGHOST
+                  valueFrom: { configMapKeyRef: { name: transactions-api, key: PGHOST } }
+                - name: PGDATABASE
+                  valueFrom: { configMapKeyRef: { name: transactions-api, key: PGDATABASE } }
+                - name: PGUSER
+                  valueFrom: { secretKeyRef: { name: transactions-api, key: DB_USER } }
+                - name: PGPASSWORD
+                  valueFrom: { secretKeyRef: { name: transactions-api, key: PGPASSWORD } }
+              volumeMounts:
+                - { name: backups, mountPath: /backups }
+          volumes:
+            - name: backups
+              persistentVolumeClaim: { claimName: transactions-backups }

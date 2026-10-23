@@ -1,0 +1,21 @@
+name: ci
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:      # boton "Run workflow" en la pestana Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest   # Docker is available, so the Testcontainers tests really run
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Build and test
+        run: mvn -B verify
+      - name: Build image
+        run: docker build -t transactions-api:ci .
