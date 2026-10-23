@@ -21,6 +21,8 @@ persiste el resultado en PostgreSQL y permite consultarlas con filtros y paginac
 | Recorrer 8 escenarios guiados | `make demo` | `curl` + app arriba | la del modo elegido |
 | Correr los tests | `make test` / `make verify` | JDK, Maven (Docker opcional) | — |
 
+> `make run` / `make up` dejan la terminal ocupada: abre **otra terminal** para `make demo`.
+
 Sin `make`: `mvn spring-boot:run -Dspring-boot.run.profiles=local` (equivale a `make run`) y `docker compose up --build`.
 
 Al arrancar: API en `http://localhost:8080` · Swagger en `/swagger-ui.html` · health en `/actuator/health`.
