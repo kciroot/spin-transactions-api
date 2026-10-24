@@ -17,5 +17,7 @@ jobs:
           cache: maven
       - name: Build and test
         run: mvn -B verify
+      - name: Validate Kubernetes manifests
+        run: for o in local local-full prod-example; do kubectl kustomize deploy/k8s/overlays/$o > /dev/null; echo "$o OK"; done
       - name: Build image
         run: docker build -t transactions-api:ci .
